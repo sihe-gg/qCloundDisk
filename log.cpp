@@ -344,7 +344,7 @@ void log::sendReceiveDatas(const int page)
         }
     });
 
-    QTimer::singleShot(8000, this, [=](){
+    QTimer::singleShot(10000, this, [=](){
         if(m_loginTimeOut == false)
         {
             return;
