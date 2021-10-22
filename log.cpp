@@ -9,6 +9,8 @@ log::log(QWidget *parent)
     ui->setupUi(this);
 
     initWindows();
+    //设置样式表 CSS
+    initStyleSheet();
     runWindows();
 }
 
@@ -23,12 +25,7 @@ void log::initWindows()
     QApplication::setWindowIcon(QIcon(":/fileIcon/CloundDisk2.png"));
     //无边框
     setWindowFlags(Qt::FramelessWindowHint);
-    //设置样式表 CSS
-    QFile file("./login.qss");
-    file.open(QFile::ReadOnly);
-    QByteArray all = file.readAll();
-    file.close();
-    this->setStyleSheet(all);
+
     //创建单例对象
     m_loginInstance = LoginInfoData::getLoginInfoInstance();
 
@@ -69,6 +66,62 @@ void log::initWindows()
     {
         initRememberPwd();
     }
+}
+void log::initStyleSheet()
+{
+    QString styleSheet = "log\
+    {\
+        border-image: url(:/images/login_bk.jpg);\
+    }\
+    log *\
+    {\
+        font-family: Arial;\
+        font-size: 20px;\
+    }\
+    QLabel#label_2, #label_5, #label_11, #label_12\
+    {\
+        font-size: 30px;\
+        font-weight: bold;\
+    }\
+    QLabel#imageLabel\
+    {\
+        border-image: url(:/images/13.png);\
+    }\
+    QLabel#label_2\
+    {\
+        color:white;\
+    }\
+    QLineEdit\
+    {\
+        font-size: 20px\
+    }\
+    QPushButton#registerNowBtn\
+    {\
+        color: orange;\
+        text-decoration: underline;\
+        border: 0px;\
+    }\
+    QPushButton#loginBtn, #registeredBtn, #serverConfigBtn\
+    {\
+        font-size: 25px;\
+        border-image: url(:/images/balckButton.png);\
+        width: 100px;\
+        height: 40px;\
+        color: white;\
+    }\
+    QCheckBox::indicator {\
+          width: 60px;\
+          height: 60px;\
+    }\
+    QCheckBox::indicator:unchecked\
+    {\
+          image: url(:/images/set2.png);\
+    }\
+    QCheckBox::indicator:checked\
+    {\
+          image: url(:/images/set3.png);\
+    }";
+    this->setStyleSheet(styleSheet);
 }
 
 int log::checkDatas(const int page)
@@ -291,7 +344,7 @@ void log::sendReceiveDatas(const int page)
         }
     });
 
-    QTimer::singleShot(5000, this, [=](){
+    QTimer::singleShot(8000, this, [=](){
         if(m_loginTimeOut == false)
         {
             return;

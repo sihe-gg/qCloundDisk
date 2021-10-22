@@ -10,6 +10,7 @@ upload::upload(QWidget *parent) :
     ui->setupUi(this);
 
     initUploadWindow();
+    initStyleSheet();    // 设置css样式表
     initUserFileList();
     addMenuAction();
 
@@ -23,12 +24,6 @@ upload::~upload()
 
 void upload::initUploadWindow()
 {
-    // 设置css样式表
-    QFile file("./upload.qss");
-    file.open(QFile::ReadOnly);
-    QString all = file.readAll();
-    file.close();
-    this->setStyleSheet(all);
     // 设置默认页
     ui->stackedWidget->setCurrentWidget(ui->myList_Page);
     // 设置鼠标跟踪
@@ -103,6 +98,83 @@ void upload::initUploadWindow()
     connect(ui->otherShare_ListWidget, &QListWidget::customContextMenuRequested, [=](){
         m_otherShareMenu->exec(QCursor::pos());
     });
+}
+
+void upload::initStyleSheet()
+{
+    QString styleSheet = "upload * \
+    {\
+        font-family: Arial;\
+        font-size: 20px;\
+    }\
+    QListWidget#myShare_ListWidget, #otherShare_ListWidget, #myFile_ListWidget\
+    {\
+        font-size: 16px;\
+    }\
+    QLabel#myshare_Label, #othershare_Label\
+    {\
+        font-size: 30px;\
+        color: white;\
+    }\
+    QLabel#uploadFontLabel\
+    {\
+        font-size: 25px;\
+        font-weight: bold;\
+        color: white;\
+    }\
+    QPushButton {\
+          border: 2px solid #8f8f91;\
+          border-radius: 6px;\
+          background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                            stop: 0 #f6f7fa, stop: 1 #dadbde);\
+          min-width: 80px;\
+      }\
+      QPushButton:pressed {\
+          background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                            stop: 0 #dadbde, stop: 1 #f6f7fa);\
+      }\
+      QPushButton:flat {\
+          border: none;\
+      }\
+      QPushButton:default {\
+          border-color: navy;\
+      }\
+      QListView {\
+          show-decoration-selected: 1;\
+      }\
+      QListView::item:alternate {\
+          background: #EEEEEE;\
+      }\
+      QListView::item:selected {\
+          border: 1px solid #6a6ea9;\
+      }\
+      QListView::item:selected:!active {\
+          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                      stop: 0 #ABAFE5, stop: 1 #8588B2);\
+      }\
+      QListView::item:selected:active {\
+          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                      stop: 0 #6a6ea9, stop: 1 #888dd9);\
+      }\
+      QListView::item:hover {\
+          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                      stop: 0 #FAFBFE, stop: 1 #DCDEF1);\
+      }\
+      QMenu {\
+          background-color: #e8daef ;\
+          border: 1px solid black;\
+      }\
+      QMenu::item {\
+          background-color: transparent;\
+      }\
+      QMenu::item:selected \
+          background-color: #e74c3c;\
+      }\
+      QProgressBar::chunk {\
+          background-color: #05B8CC;\
+          width: 20px;\
+      }";
+      this->setStyleSheet(styleSheet);
 }
 
 void upload::addMenuAction()

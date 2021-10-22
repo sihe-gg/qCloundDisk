@@ -70,6 +70,7 @@ public:
     ~upload();
 
     void initUploadWindow();                        // 初始化ui界面
+    void initStyleSheet();
     void initUserFileList();                        // 初始化用户文件到列表
     void addMenuAction();                           // 初始化菜单栏
     void executeAction(QAction *action);            // 根据菜单执行动作

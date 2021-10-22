@@ -41,6 +41,7 @@ public:
 
     //初始化
     void initWindows();
+    void initStyleSheet();
 
     //校验注册内容
     int checkDatas(const int page);
