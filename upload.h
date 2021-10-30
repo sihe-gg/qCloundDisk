@@ -28,9 +28,11 @@
 #include <QQueue>
 #include <QTextCodec>
 #include <QDateTime>
+#include <QThread>
 
 #include "logininfodata.h"
 #include "modifypasswd.h"
+#include "multithread.h"
 
 // 版本号
 const QString VERSION = "V1.0";
@@ -70,7 +72,8 @@ public:
     ~upload();
 
     void initUploadWindow();                        // 初始化ui界面
-    void initStyleSheet();
+    void initStyleSheet();                          // 初始化qss
+    void initThread();                              // 初始化线程
     void initUserFileList();                        // 初始化用户文件到列表
     void addMenuAction();                           // 初始化菜单栏
     void executeAction(QAction *action);            // 根据菜单执行动作
@@ -86,12 +89,11 @@ public:
     void addShareFileList(QString username,          // 添加共享文件到列表
                           QString filename, QString md5, long size, int downloadCount, QString fileDate);
 
-    void downloadFile(QList<QListWidgetItem *> fileItems,     // 发送服务器要下载的文件
-                      QString dir, int flag);
-    void delFile(QList<QListWidgetItem *> fileItems);         // 发送服务器要删除的文件
-    void shareFile(QList<QListWidgetItem *> fileItems);       // 发送服务器要共享的文件
-    void cancelShareFile(QList<QListWidgetItem *> fileItems); // 发送服务器要取消分享的文件
-    void fileAttribute(QList<QListWidgetItem *> fileItems, int flag);   // 文件属性
+    void downloadFile(userFileInfo *downloadInfo, QString dir); // 发送服务器要下载的文件
+    void delFile(userFileInfo *delInfo);                   // 发送服务器要删除的文件
+    void shareFile(userFileInfo *shareInfo);                 // 发送服务器要共享的文件
+    void cancelShareFile(userFileInfo *cancelShareInfo);           // 发送服务器要取消分享的文件
+    void fileAttribute(userFileInfo *attributeInfo);   // 文件属性
 
     void updateApplication();                       // 更新软件
 
@@ -105,6 +107,10 @@ public:
 
 signals:
     void switchUser();                              // 切换用户
+
+    void startRunning(QString filePath, QString addr, QString username, QString filename, QString md5, QString size);                            // 触发线程
+public slots:
+    void receivResult(const QString &str);          // 接收线程中的结果
 
 protected:
     void paintEvent(QPaintEvent *);
@@ -157,11 +163,14 @@ private:
     QMenu *m_uploadMenu;
     QAction *m_delFilePathAction;
 
-    QMessageBox *m_message;                     // 自定义messagebox
+    //QMessageBox *m_message;                     // 自定义messagebox
 
     static int m_fileNumber;
 
-    ModifyPasswd *m_modifyPwd;
+    ModifyPasswd *m_modifyPwd;                  // 修改密码
+
+    QThread *m_downloadThread;
+    MultiThread *m_worker;
 
 };
 

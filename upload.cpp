@@ -11,6 +11,7 @@ upload::upload(QWidget *parent) :
 
     initUploadWindow();
     initStyleSheet();    // 设置css样式表
+    initThread();
     initUserFileList();
     addMenuAction();
 
@@ -66,7 +67,7 @@ void upload::initUploadWindow()
     connect(ui->close_ToolButton, &QToolButton::clicked,[=](){
         this->close();
     });
-    connect(ui->download_PushButton, &QPushButton::clicked,[=](){
+    connect(ui->myFile_PushButton, &QPushButton::clicked,[=](){
         ui->stackedWidget->setCurrentWidget(ui->myList_Page);
     });
     connect(ui->upload_PushButton, &QPushButton::clicked,[=](){
@@ -77,6 +78,9 @@ void upload::initUploadWindow()
     });
     connect(ui->test_PushButton, &QPushButton::clicked,[=](){
         ui->stackedWidget->setCurrentWidget(ui->test_page);
+    });
+    connect(ui->download_PushButton, &QPushButton::clicked,[=](){
+        ui->stackedWidget->setCurrentWidget(ui->download_Page);
     });
 
     // 获取上传文件路径
@@ -128,53 +132,71 @@ void upload::initStyleSheet()
           background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
                                             stop: 0 #f6f7fa, stop: 1 #dadbde);\
           min-width: 80px;\
-      }\
-      QPushButton:pressed {\
+    }\
+    QPushButton:pressed {\
           background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
                                             stop: 0 #dadbde, stop: 1 #f6f7fa);\
-      }\
-      QPushButton:flat {\
+    }\
+    QPushButton:flat {\
           border: none;\
-      }\
-      QPushButton:default {\
+    }\
+    QPushButton:default {\
           border-color: navy;\
-      }\
-      QListView {\
+    }\
+    QListView {\
           show-decoration-selected: 1;\
-      }\
-      QListView::item:alternate {\
+    }\
+    QListView::item:alternate {\
           background: #EEEEEE;\
-      }\
-      QListView::item:selected {\
+    }\
+    QListView::item:selected {\
           border: 1px solid #6a6ea9;\
-      }\
-      QListView::item:selected:!active {\
+    }\
+    QListView::item:selected:!active {\
           background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
                                       stop: 0 #ABAFE5, stop: 1 #8588B2);\
-      }\
-      QListView::item:selected:active {\
+    }\
+    QListView::item:selected:active {\
           background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
                                       stop: 0 #6a6ea9, stop: 1 #888dd9);\
-      }\
-      QListView::item:hover {\
+    }\
+    QListView::item:hover {\
           background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
                                       stop: 0 #FAFBFE, stop: 1 #DCDEF1);\
-      }\
-      QMenu {\
-          background-color: #e8daef ;\
+    }\
+    QMenu\
+    {\
+          background-color: #e8daef;\
           border: 1px solid black;\
-      }\
-      QMenu::item {\
+    }\
+    QMenu::item\
+    {\
           background-color: transparent;\
-      }\
-      QMenu::item:selected \
+    }\
+    QMenu::item:selected \
+    {\
           background-color: #e74c3c;\
-      }\
-      QProgressBar::chunk {\
+    }\
+    QProgressBar::chunk {\
           background-color: #05B8CC;\
           width: 20px;\
-      }";
-      this->setStyleSheet(styleSheet);
+    }";
+    this->setStyleSheet(styleSheet);
+}
+
+// 初始化线程
+void upload::initThread()
+{
+    m_downloadThread = new QThread();
+    m_worker = new MultiThread();
+
+    m_worker->moveToThread(m_downloadThread);
+
+    connect(this, &upload::startRunning, m_worker, &MultiThread::startDownload);
+    connect(m_downloadThread, &QThread::finished, m_worker, &QObject::deleteLater);
+    connect(m_worker, &MultiThread::resultReady, this, &upload::receivResult);
+
+    qDebug() << "main ThreadId: " << QThread::currentThreadId();
 }
 
 void upload::addMenuAction()
@@ -267,7 +289,6 @@ void upload::addMenuAction()
         {
             for (; ite != m_uploadVector.end(); ite++)
             {
-
                 if(items.at(0) == *ite)
                 {
                     qDebug() << "items.at(0)" << items.at(0) << "*ite" << *ite;
@@ -289,159 +310,114 @@ void upload::executeAction(QAction *action)
 {
     // 我的文件区创建selectedItems
     QList<QListWidgetItem *> myFileItems = ui->myFile_ListWidget->selectedItems();
+    QVector<userFileInfo *>::iterator ite;
+    QString dir;
     // 我的分享区创建selectedItems
     QList<QListWidgetItem *> myShareItems = ui->myShare_ListWidget->selectedItems();
+    QVector<userFileInfo *>::iterator shareIte;
     // 他人的分享区创建selectedItems
     QList<QListWidgetItem *> otherShareItems = ui->otherShare_ListWidget->selectedItems();
 
     qDebug() << "我的文件区被选中：" << myFileItems.size();
 
-    if(myFileItems.size() > 0)
+    // 弹出对话框
+    if(action == m_downloadAction)
     {
+        int ret = QMessageBox::information(this, "下载", tr("您确定下载这 %1 项吗？").arg(myFileItems.size()),
+                                            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+        dir = QFileDialog::getExistingDirectory(this, "选择目录",
+                                                "C:/", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+        switch (ret)
+        {
+        case QMessageBox::No:
+            return;
+        default:
+            break;
+        }
+    }
+
+    while(myFileItems.size() > 0)
+    {
+        QListWidgetItem *item = myFileItems.takeFirst();
+
+        for (ite = m_vector.begin(); ite != m_vector.end() ; ite++)
+        {
+            if(item == (*ite)->m_list)
+            {
+                break;          //找到一个QListWidgetItem
+            }
+        }
+
         if(action == m_delAction)
         {
-            m_message = new QMessageBox(this);
-            m_message->setText("您正在删除文件");
-            m_message->setInformativeText(QString("确定要删除这 %1 项吗?").arg(myFileItems.size()));
-            m_message->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-            m_message->setDefaultButton(QMessageBox::Yes);
-            int ret = m_message->exec();
-            switch (ret)
-            {
-            case QMessageBox::Yes:
-                delFile(myFileItems);
-                break;
-            default:
-                m_message->deleteLater();
-                break;
-            }
+            delFile(*ite);
         }
         else if(action == m_downloadAction)
         {
-            QString dir;
-            m_message = new QMessageBox(this);
-            m_message->setText("您正在下载文件");
-            m_message->setInformativeText(QString("确定要下载这 %1 项吗?").arg(myFileItems.size()));
-            m_message->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-            m_message->setDefaultButton(QMessageBox::Yes);
-            int ret = m_message->exec();
-
-            switch (ret)
-            {
-            case QMessageBox::Yes:
-                dir = QFileDialog::getExistingDirectory(this, "选择目录",
-                        "C:/", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-                downloadFile(myFileItems, dir, MAINFILE);
-                break;
-            default:
-                m_message->deleteLater();
-                break;
-            }
+            downloadFile(*ite, dir);
         }
         else if(action == m_shareAction)
-        {  
-            m_message = new QMessageBox(this);
-            m_message->setText("您正在分享文件");
-            m_message->setInformativeText(QString("确定要分享这 %1 项吗?").arg(myFileItems.size()));
-            m_message->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-            m_message->setDefaultButton(QMessageBox::Yes);
-            int ret = m_message->exec();
-            switch (ret)
-            {
-            case QMessageBox::Yes:
-                // 发送服务器用户分享的文件
-                shareFile(myFileItems);
-                break;
-            default:
-                m_message->deleteLater();
-                break;
-            }
+        {
+            shareFile(*ite);
         }
         else if(action == m_propertyAction)
         {
-            fileAttribute(myFileItems, MAINFILE);
+
         }
     }
 
 //----------------------------------------------------------------------------
 
     // 我的分享区有项目被选中
-    if (myShareItems.size() > 0)
+    while(myShareItems.size() > 0)
     {
+        QListWidgetItem *item = myShareItems.takeFirst();
+
+        for (shareIte = m_shareVector.begin(); shareIte != m_shareVector.end(); shareIte++)
+        {
+            if(item == (*shareIte)->m_list)
+            {
+                break;              //找到项目
+            }
+        }
+
         if(action == m_myShareCancelAction)
         {
-            m_message = new QMessageBox(this);
-            m_message->setText("您正在取消分享文件");
-            m_message->setInformativeText(QString("确定要取消分享这 %1 项吗?").arg(myShareItems.size()));
-            m_message->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-            m_message->setDefaultButton(QMessageBox::Yes);
-            int ret = m_message->exec();
-            switch (ret)
-            {
-            case QMessageBox::Yes:
-                cancelShareFile(myShareItems);
-                break;
-            default:
-                m_message->deleteLater();
-                break;
-            }
+            cancelShareFile(*shareIte);
         }
         else if(action == m_myShareDownloadAction)
         {
-            QString dir;
-            m_message = new QMessageBox(this);
-            m_message->setText("您正在下载文件");
-            m_message->setInformativeText(QString("确定要下载这 %1 项吗?").arg(myShareItems.size()));
-            m_message->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-            m_message->setDefaultButton(QMessageBox::Yes);
-            int ret = m_message->exec();
-            switch (ret)
-            {
-            case QMessageBox::Yes:
-                dir = QFileDialog::getExistingDirectory(this, "选择目录",
-                        "C:/", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-                downloadFile(myShareItems, dir, SHAREFILE);
-                break;
-            default:
-                m_message->deleteLater();
-                break;
-            }
+            downloadFile(*shareIte, dir);
         }
         else if(action == m_propertyAction)
         {
-            fileAttribute(myShareItems, SHAREFILE);
+
         }
     }
 
 //----------------------------------------------------------------------------
 
     // 他人的分享区有项目被选中
-    if (otherShareItems.size() > 0)
+    while(otherShareItems.size() > 0)
     {
+        QListWidgetItem *item = otherShareItems.takeFirst();
+
+        for (shareIte = m_shareVector.begin(); shareIte != m_shareVector.end(); shareIte++)
+        {
+            if(item == (*shareIte)->m_list)
+            {
+                break;              //找到项目
+            }
+        }
+
         if(action == m_otherShareDownloadAction)
         {
-            QString dir;
-            m_message = new QMessageBox(this);
-            m_message->setText("您正在下载文件");
-            m_message->setInformativeText(QString("确定要下载这 %1 项吗?").arg(otherShareItems.size()));
-            m_message->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-            m_message->setDefaultButton(QMessageBox::Yes);
-            int ret = m_message->exec();
-            switch (ret)
-            {
-            case QMessageBox::Yes:
-                dir = QFileDialog::getExistingDirectory(this, "选择目录",
-                        "C:/", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-                downloadFile(otherShareItems, dir, SHAREFILE);
-                break;
-            default:
-                m_message->deleteLater();
-                break;
-            }
+            downloadFile(*shareIte, dir);
         }
         else if(action == m_propertyAction)
         {
-            fileAttribute(otherShareItems, SHAREFILE);
+
         }
     }
 }
@@ -709,7 +685,7 @@ void upload::addShareFileList(QString username, QString filename, QString md5,
     userShareInfo->m_downloadCount = downloadCount;
     userShareInfo->m_list = item;
 
-    qDebug() << "m_shareVector.size:" << m_shareVector.size();
+    //qDebug() << "m_shareVector.size:" << m_shareVector.size();
 
     // 分享容器添加数据
     m_shareVector.push_back(userShareInfo);
@@ -719,44 +695,8 @@ void upload::addShareFileList(QString username, QString filename, QString md5,
 
 
 // 服务器端删除文件
-void upload::delFile(QList<QListWidgetItem *> fileItems)
+void upload::delFile(userFileInfo *delInfo)
 {
-    // 递归调用退出条件
-    if(fileItems.size() <= 0)
-    {
-        m_message->setText("删除文件完成，详情请点击查看更多！");
-        m_message->setInformativeText("");
-        m_message->setStandardButtons(QMessageBox::Ok);
-        m_message->exec();
-
-        // 释放
-        m_message->deleteLater();
-        return;
-    }
-
-    // 取出被选中的删除项
-    QVector<userFileInfo *>::iterator delIte = m_vector.begin();
-    QListWidgetItem *item = fileItems.takeFirst();
-
-    for (; delIte != m_vector.end(); delIte++)
-    {
-        if(item == (*delIte)->m_list)
-        {
-            qDebug() << "fileItems: " << item << "downloadIte:" << (*delIte)->m_list;
-            break;
-        }
-
-        // 如果到结尾没有此项，错误，退出
-        if(delIte == m_vector.end())
-        {
-            m_message->setDetailedText(m_message->detailedText() + tr("删除错误，找不到指定文件，请重试！\n"));
-            return;
-        }
-    }
-
-    // 要删除的文件
-    userFileInfo *delInfo = *delIte;
-
     // 创建访问管理对象
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     // 创建请求
@@ -770,7 +710,6 @@ void upload::delFile(QList<QListWidgetItem *> fileItems)
             arg(delInfo->m_filename).arg(delInfo->m_md5).arg(delInfo->m_date).
             arg(delInfo->m_size).toUtf8();
 
-    //QByteArray deleteFile = QString(fileInfoList->m_filename + " " + loginInstance->getUserName()).toUtf8() + " ";
     qDebug() << QString(deleteFile);
 
     // 发送post
@@ -778,8 +717,6 @@ void upload::delFile(QList<QListWidgetItem *> fileItems)
     connect(reply, &QNetworkReply::readyRead, [=](){
         QByteArray all = reply->readAll();
         ui->textEdit->append(all);
-        // 获取detail，方便追加
-        QString detail = m_message->detailedText();
 
         // QByteArray->doc
         QJsonDocument replyDoc = QJsonDocument::fromJson(all);
@@ -795,66 +732,26 @@ void upload::delFile(QList<QListWidgetItem *> fileItems)
             m_vector.remove(delNum);
             delete delInfo->m_list;
             delete delInfo;
-
-            m_message->setDetailedText(detail + tr("您选择的文件 %1 已经删除！\n").arg(delInfo->m_filename));
         }
         else if("002" == status)
         {
-            m_message->setDetailedText(detail + tr("您选择的文件 %1 删除失败！\n").arg(delInfo->m_filename));
+            QMessageBox::information(this, "删除文件", tr("您选择的文件 %1 删除失败！").arg(delInfo->m_filename));
         }
         else
         {
-            m_message->setDetailedText(detail + tr("服务器繁忙, 您选择的文件 %1 删除失败！\n").arg(delInfo->m_filename));
+            QMessageBox::information(this, "删除文件", tr("服务器繁忙, 您选择的文件 %1 删除失败！").arg(delInfo->m_filename));
         }
     });
 
     connect(reply, &QNetworkReply::finished, [=](){
         reply->deleteLater();
         manager->deleteLater();
-
-        delFile(fileItems);
     });
-
 }
 
 // 发送服务器要共享的文件
-void upload::shareFile(QList<QListWidgetItem *> fileItems)
+void upload::shareFile(userFileInfo *shareInfo)
 {
-    // 递归调用退出条件
-    if(fileItems.size() <= 0)
-    {
-        m_message->setText("分享完成，详情请点击查看更多！");
-        m_message->setInformativeText("");
-        m_message->setStandardButtons(QMessageBox::Ok);
-        m_message->exec();
-
-        // 释放
-        m_message->deleteLater();
-        return;
-    }
-
-    // 被选中的分享项
-    QVector<userFileInfo *>::iterator shareIte = m_vector.begin();
-    QListWidgetItem *takeItem = fileItems.takeFirst();
-
-    for (; shareIte != m_vector.end(); shareIte++)
-    {
-        if(takeItem == (*shareIte)->m_list)
-        {
-            qDebug() << "fileItems: " << takeItem << "downloadIte:" << (*shareIte)->m_list;
-            break;
-        }
-
-        // 如果到结尾没有此项，错误，退出
-        if(shareIte == m_vector.end())
-        {
-            m_message->setDetailedText(m_message->detailedText() + tr("分享错误，找不到指定文件，请重试！\n"));
-            return;
-        }
-    }
-    // 要分享的文件
-    userFileInfo *shareInfo = *shareIte;
-
     // 创建访问管理
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 
@@ -872,9 +769,6 @@ void upload::shareFile(QList<QListWidgetItem *> fileItems)
     QNetworkReply *reply = manager->post(request, data);
 
     connect(reply, &QNetworkReply::readyRead, [=](){
-        // 获取之前细节方便追加
-        QString detail = m_message->detailedText();
-
         QByteArray all = reply->readAll();
         ui->textEdit->append(all);
 
@@ -904,70 +798,30 @@ void upload::shareFile(QList<QListWidgetItem *> fileItems)
             userShareInfo->m_isShare = true;
             userShareInfo->m_list = item;
 
-            qDebug() << "m_shareVector.size:" << m_shareVector.size();
+            //qDebug() << "m_shareVector.size:" << m_shareVector.size();
             // 分享容器添加数据
             m_shareVector.push_back(userShareInfo);
             // 分享区添加主题
             ui->myShare_ListWidget->addItem(item);
-
-            m_message->setDetailedText(detail + tr("文件 %1 分享成功！\n").arg(shareInfo->m_filename));
         }
         else if("003" == status)
         {
-            m_message->setDetailedText(detail + tr("文件 %1 已经被分享过了！\n").arg(shareInfo->m_filename));
+            QMessageBox::information(this, "分享文件", tr("文件 %1 已经被分享过了！").arg(shareInfo->m_filename));
         }
         else
         {
-            m_message->setDetailedText(detail + tr("服务器出错，文件 %1 分享失败！\n").arg(shareInfo->m_filename));
+            QMessageBox::information(this, "分享文件", tr("服务器出错，文件 %1 分享失败！").arg(shareInfo->m_filename));
         }
     });
 
     connect(reply, &QNetworkReply::finished, [=](){
         reply->deleteLater();
         manager->deleteLater();
-
-        shareFile(fileItems);
     });
-
 }
 
-void upload::cancelShareFile(QList<QListWidgetItem *> fileItems)
+void upload::cancelShareFile(userFileInfo *cancelShareInfo)
 {
-    // 递归调用退出条件
-    if(fileItems.size() <= 0)
-    {
-        m_message->setText("取消分享完成，详情请点击查看更多！");
-        m_message->setInformativeText("");
-        m_message->setStandardButtons(QMessageBox::Ok);
-        m_message->exec();
-
-        // 释放
-        m_message->deleteLater();
-        return;
-    }
-
-    // 取出被选中的取消分享项
-    QVector<userFileInfo *>::iterator cancelShareIte = m_shareVector.begin();
-    QListWidgetItem *item = fileItems.takeFirst();
-
-    for (; cancelShareIte != m_shareVector.end(); cancelShareIte++)
-    {
-        if(item == (*cancelShareIte)->m_list)
-        {
-            qDebug() << "fileItems: " << item << "downloadIte:" << (*cancelShareIte)->m_list;
-            break;
-        }
-
-        // 如果到结尾没有此项，错误，退出
-        if(cancelShareIte == m_shareVector.end())
-        {
-            m_message->setDetailedText(m_message->detailedText() + tr("取消分享错误，找不到指定文件，请重试！\n"));
-            return;
-        }
-    }
-    // 取出要取消分享的文件
-    userFileInfo *cancelShareInfo = *cancelShareIte;
-
     // 创建访问管理
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 
@@ -988,9 +842,6 @@ void upload::cancelShareFile(QList<QListWidgetItem *> fileItems)
         QByteArray all = reply->readAll();
         ui->textEdit->append(all);
 
-        // 获取之前细节方便追加
-        QString detail = m_message->detailedText();
-
         QJsonDocument replyDoc = QJsonDocument::fromJson(all);
         QJsonObject replyObj = replyDoc.object();
 
@@ -1005,16 +856,14 @@ void upload::cancelShareFile(QList<QListWidgetItem *> fileItems)
 
             delete cancelShareInfo->m_list;
             delete cancelShareInfo;
-
-            m_message->setDetailedText(detail + tr("取消分享文件 %1 成功！\n").arg(cancelShareInfo->m_filename));
         }
         else if("003" == status)
         {
-            m_message->setDetailedText(detail + tr("取消分享文件 %1 失败！\n").arg(cancelShareInfo->m_filename));
+            QMessageBox::information(this, "取消分享", tr("取消分享文件 %1 失败！").arg(cancelShareInfo->m_filename));
         }
         else
         {
-            m_message->setDetailedText(detail + tr("服务器繁忙，取消分享文件 %1 失败！\n").arg(cancelShareInfo->m_filename));
+            QMessageBox::information(this, "取消分享", tr("服务器繁忙，取消分享文件 %1 失败！").arg(cancelShareInfo->m_filename));
         }
     });
 
@@ -1022,19 +871,20 @@ void upload::cancelShareFile(QList<QListWidgetItem *> fileItems)
         reply->deleteLater();
         manager->deleteLater();
 
-        cancelShareFile(fileItems);
+        qDebug() << "cancelShare delete";
     });
 
 }
 
-void upload::fileAttribute(QList<QListWidgetItem *> fileItems, int flag)
+/*
+void upload::fileAttribute(userFileInfo *attributeInfo, int flag)
 {
-    if(fileItems.size() <= 0)
+    if(attributeInfo.size() <= 0)
     {
         return;
     }
 
-    QListWidgetItem *attributeItem = fileItems.takeFirst();
+    QListWidgetItem *attributeItem = attributeInfo.takeFirst();
     QVector<userFileInfo *>::iterator ite;
     userFileInfo *attributeInfo;
 
@@ -1090,8 +940,8 @@ void upload::fileAttribute(QList<QListWidgetItem *> fileItems, int flag)
     m_message->exec();
     m_message->deleteLater();
 
-    fileAttribute(fileItems, flag);
-}
+    fileAttribute(attributeInfo, flag);
+}*/
 
 void upload::updateApplication()
 {
@@ -1166,7 +1016,7 @@ void upload::getUploadFilePath()
 }
 
 // 发送服务器要下载的文件
-void upload::downloadFile(QList<QListWidgetItem *> fileItems, QString dir, int flag)
+void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
 {
     if(dir == NULL)
     {
@@ -1174,142 +1024,145 @@ void upload::downloadFile(QList<QListWidgetItem *> fileItems, QString dir, int f
         return;
     }
     // 递归调用退出条件
-    if(fileItems.size() <= 0)
-    {
-        m_message->setText("下载文件完成，详情请点击查看更多！");
-        m_message->setInformativeText("");
-        m_message->setStandardButtons(QMessageBox::Ok);
-        m_message->exec();
+//    if(downloadInfo.size() <= 0)
+//    {
+//        m_message->setText("下载文件完成，详情请点击查看更多！");
+//        m_message->setInformativeText("");
+//        m_message->setStandardButtons(QMessageBox::Ok);
+//        m_message->exec();
 
-        // 释放
-        m_message->deleteLater();
-        return;
-    }
+//        // 释放
+//        m_message->deleteLater();
+//        return;
+//    }
 
-    // 取出被选中的下载项
-    QVector<userFileInfo *>::iterator downloadIte;
-    QListWidgetItem *item = fileItems.takeFirst();;
+//    // 取出被选中的下载项
+//    QVector<userFileInfo *>::iterator downloadIte;
+//    QListWidgetItem *item = downloadInfo.takeFirst();;
 
-    // 判断是主界面下载，还是分享下载
-    if(flag == MAINFILE)
-    {
-        for (downloadIte = m_vector.begin(); downloadIte != m_vector.end(); downloadIte++)
-        {
-            if(item == (*downloadIte)->m_list)
-            {
-                qDebug() << "fileItems: " << item << "downloadIte:" << (*downloadIte)->m_list;
-                break;
-            }
+//    // 判断是主界面下载，还是分享下载
+//    if(flag == MAINFILE)
+//    {
+//        for (downloadIte = m_vector.begin(); downloadIte != m_vector.end(); downloadIte++)
+//        {
+//            if(item == (*downloadIte)->m_list)
+//            {
+//                qDebug() << "fileItems: " << item << "downloadIte:" << (*downloadIte)->m_list;
+//                break;
+//            }
 
-            // 如果到结尾没有此项，错误，退出
-            if(downloadIte == m_vector.end())
-            {
-                QMessageBox::warning(this, "下载", "下载错误，找不到指定文件，请重试！");
-                return;
-            }
-        }
-    }
-    else if(flag == SHAREFILE)
-    {
-        for (downloadIte = m_shareVector.begin(); downloadIte != m_shareVector.end(); downloadIte++)
-        {
-            if(item == (*downloadIte)->m_list)
-            {
-                qDebug() << "fileItems: " << item << "downloadIte:" << (*downloadIte)->m_list;
-                break;
-            }
+//            // 如果到结尾没有此项，错误，退出
+//            if(downloadIte == m_vector.end())
+//            {
+//                QMessageBox::warning(this, "下载", "下载错误，找不到指定文件，请重试！");
+//                return;
+//            }
+//        }
+//    }
+//    else if(flag == SHAREFILE)
+//    {
+//        for (downloadIte = m_shareVector.begin(); downloadIte != m_shareVector.end(); downloadIte++)
+//        {
+//            if(item == (*downloadIte)->m_list)
+//            {
+//                qDebug() << "fileItems: " << item << "downloadIte:" << (*downloadIte)->m_list;
+//                break;
+//            }
 
-            // 如果到结尾没有此项，错误，退出
-            if(downloadIte == m_shareVector.end())
-            {
-                QMessageBox::warning(this, "下载", "下载错误，找不到指定文件，请重试！");
-                return;
-            }
-        }
-    }
-    else
-    {
-        qDebug() << "非法下载文件！";
-        return;
-    }
+//            // 如果到结尾没有此项，错误，退出
+//            if(downloadIte == m_shareVector.end())
+//            {
+//                QMessageBox::warning(this, "下载", "下载错误，找不到指定文件，请重试！");
+//                return;
+//            }
+//        }
+//    }
+//    else
+//    {
+//        qDebug() << "非法下载文件！";
+//        return;
+//    }
 
-    // 取出要下载的文件
-    userFileInfo *downloadInfo = *downloadIte;
+//    // 取出要下载的文件
+//    userFileInfo *downloadInfo = *downloadIte;
 
     QString filePath = dir + "/" + downloadInfo->m_filename;
-    QFile *file = new QFile(filePath);
-    if(!file->open(QIODevice::WriteOnly))
-    {
-        QMessageBox::warning(this, "创建文件" , "创建文件失败，请重试！");
 
-        file->deleteLater();
-        return;
-    }
-    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+    // 开始线程
+    m_downloadThread->start();
 
-    QUrl url(QString("http://%1/download").arg(loginInstance->getAddress()));
-    QNetworkRequest request;
-    request.setUrl(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+    // 传给多线程下载
+    emit startRunning(filePath, loginInstance->getAddress(), loginInstance->getUserName(), downloadInfo->m_filename,
+                      downloadInfo->m_md5, QString::number(downloadInfo->m_size));
 
-    // 下载格式:username filename md5 size 最后空格
-    QByteArray downloadData = QString("%1 %2 %3 %4 ").arg(loginInstance->getUserName()).
-            arg(downloadInfo->m_filename).arg(downloadInfo->m_md5).arg(downloadInfo->m_size).toUtf8();
 
-    qDebug() << "download:" << downloadData;
 
-    QNetworkReply *reply = manager->post(request, downloadData);
 
-    connect(reply, &QNetworkReply::readyRead, [=](){
-        qint64 size;
-        while((size = reply->bytesAvailable()) > 0)
-        {
-            QByteArray all = reply->readAll();
-            ui->textEdit->append(all);
+//    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 
-            file->write(all);
-        }
-    });
+//    QUrl url(QString("http://%1/download").arg(loginInstance->getAddress()));
+//    QNetworkRequest request;
+//    request.setUrl(url);
+//    request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
 
-    connect(reply, &QNetworkReply::downloadProgress, [=](qint64 bytesReceived, qint64 bytesTotal){
-        if(bytesTotal == 0)
-            return;
+//    // 下载格式:username filename md5 size 最后空格
+//    QByteArray downloadData = QString("%1 %2 %3 %4 ").arg(loginInstance->getUserName()).
+//            arg(downloadInfo->m_filename).arg(downloadInfo->m_md5).arg(downloadInfo->m_size).toUtf8();
 
-        //bytesTotal == downloadInfo->m_size
-        qint64 downloadPercentage = (bytesReceived * 100) / downloadInfo->m_size;
-        ui->status_Label->setText(tr("文件: %1 正在下载: %2\%").arg(downloadInfo->m_filename).arg(QString::number(downloadPercentage)));
-    });
+//    qDebug() << "download:" << downloadData;
 
-    // 下载完成释放资源及递归调用下载
-    connect(reply, &QNetworkReply::finished, [=](){
-        m_message->setDetailedText(m_message->detailedText() + tr("文件 %1 下载成功！\n").arg(downloadInfo->m_filename));
+//    QNetworkReply *reply = manager->post(request, downloadData);
 
-        file->close();
-        file->deleteLater();
-        reply->deleteLater();
-        manager->deleteLater();
-        qDebug() << "下载完成，释放资源完成";
+//    connect(reply, &QNetworkReply::readyRead, [=](){
+//        qint64 size;
+//        while((size = reply->bytesAvailable()) > 0)
+//        {
+//            QByteArray all = reply->readAll();
+//            ui->textEdit->append(all);
 
-        // 下载完成递归调用下载
-        downloadFile(fileItems, dir, flag);
-    });
+//            file->write(all);
+//        }
+//    });
 
-    // 下载错误检查
-    connect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error),
-            [=](QNetworkReply::NetworkError code)
-    {
-        qDebug() << "code :" << code;
-        if(code == QNetworkReply::UnknownServerError)
-        {
-            m_message->setDetailedText(m_message->detailedText() + tr("连接服务器失败，文件 %1 下载失败！\n").arg(downloadInfo->m_filename));
+//    connect(reply, &QNetworkReply::downloadProgress, [=](qint64 bytesReceived, qint64 bytesTotal){
+//        if(bytesTotal == 0)
+//            return;
 
-            file->close();
-            file->deleteLater();
-            reply->deleteLater();
-            manager->deleteLater();
-            return;
-        }
-    });
+//        //bytesTotal == downloadInfo->m_size
+//        qint64 downloadPercentage = (bytesReceived * 100) / downloadInfo->m_size;
+//        ui->status_Label->setText(tr("文件: %1 正在下载: %2\%").arg(downloadInfo->m_filename).arg(QString::number(downloadPercentage)));
+//    });
+
+//    // 下载完成释放资源及递归调用下载
+//    connect(reply, &QNetworkReply::finished, [=](){
+//        m_message->setDetailedText(m_message->detailedText() + tr("文件 %1 下载成功！\n").arg(downloadInfo->m_filename));
+
+//        file->close();
+//        file->deleteLater();
+//        reply->deleteLater();
+//        manager->deleteLater();
+//        qDebug() << "下载完成，释放资源完成";
+
+//        // 下载完成递归调用下载
+//        downloadFile(fileItems, dir, flag);
+//    });
+
+//    // 下载错误检查
+//    connect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error),
+//            [=](QNetworkReply::NetworkError code)
+//    {
+//        qDebug() << "code :" << code;
+//        if(code == QNetworkReply::UnknownServerError)
+//        {
+//            m_message->setDetailedText(m_message->detailedText() + tr("连接服务器失败，文件 %1 下载失败！\n").arg(downloadInfo->m_filename));
+
+//            file->close();
+//            file->deleteLater();
+//            reply->deleteLater();
+//            manager->deleteLater();
+//            return;
+//        }
+//    });
 }
 
 QString upload::getListIcon(char *suffix)
@@ -1444,6 +1297,12 @@ void upload::paintVector()
     {
         qDebug() << "filename:" << (*ite)->m_filename << "QlistWidgetItem:" << (*ite)->m_list;
     }
+}
+
+// 接收线程回复的结果
+void upload::receivResult(const QString &str)
+{
+    qDebug() << "str == "  << str;
 }
 
 void upload::paintEvent(QPaintEvent *)

@@ -13,12 +13,12 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_18" rowstretch="0,0,0">
+  <layout class="QGridLayout" name="gridLayout_18" rowstretch="0,0">
    <property name="topMargin">
     <number>0</number>
    </property>
    <property name="bottomMargin">
-    <number>0</number>
+    <number>18</number>
    </property>
    <item row="0" column="0">
     <widget class="QWidget" name="widget_13" native="true">
@@ -90,7 +90,7 @@
        <number>0</number>
       </property>
       <property name="bottomMargin">
-       <number>0</number>
+       <number>9</number>
       </property>
       <item row="0" column="0">
        <widget class="QWidget" name="widget_4" native="true">
@@ -101,10 +101,31 @@
          <property name="rightMargin">
           <number>36</number>
          </property>
-         <item row="0" column="4">
-          <widget class="QPushButton" name="download_PushButton">
+         <item row="0" column="5">
+          <widget class="QPushButton" name="upload_PushButton">
            <property name="text">
-            <string>我的文件</string>
+            <string>上传</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QPushButton" name="test_PushButton">
+           <property name="text">
+            <string>测试</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="8">
+          <widget class="QPushButton" name="announce_PushButton">
+           <property name="text">
+            <string>公告</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="6">
+          <widget class="QPushButton" name="share_PushButton">
+           <property name="text">
+            <string>共享列表</string>
            </property>
           </widget>
          </item>
@@ -112,13 +133,6 @@
           <widget class="QLabel" name="uploadFontLabel">
            <property name="text">
             <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="7">
-          <widget class="QPushButton" name="announce_PushButton">
-           <property name="text">
-            <string>公告</string>
            </property>
           </widget>
          </item>
@@ -164,24 +178,17 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="5">
-          <widget class="QPushButton" name="upload_PushButton">
+         <item row="0" column="4">
+          <widget class="QPushButton" name="myFile_PushButton">
            <property name="text">
-            <string>上传文件</string>
+            <string>我的文件</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="3">
-          <widget class="QPushButton" name="test_PushButton">
+         <item row="0" column="7">
+          <widget class="QPushButton" name="download_PushButton">
            <property name="text">
-            <string>测试</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="6">
-          <widget class="QPushButton" name="share_PushButton">
-           <property name="text">
-            <string>共享列表</string>
+            <string>下载</string>
            </property>
           </widget>
          </item>
@@ -218,7 +225,7 @@
             <bool>false</bool>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>3</number>
            </property>
            <widget class="QWidget" name="upload_page">
             <layout class="QGridLayout" name="gridLayout_6">
@@ -535,6 +542,18 @@
              </item>
             </layout>
            </widget>
+           <widget class="QWidget" name="download_Page">
+            <widget class="QTableWidget" name="download_TableWidget">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>10</y>
+               <width>521</width>
+               <height>461</height>
+              </rect>
+             </property>
+            </widget>
+           </widget>
           </widget>
          </item>
         </layout>
@@ -543,35 +562,10 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QWidget" name="widget_14" native="true">
-     <layout class="QGridLayout" name="gridLayout_19">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>9</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="status_Label">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>download_PushButton</tabstop>
+  <tabstop>myFile_PushButton</tabstop>
   <tabstop>upload_PushButton</tabstop>
   <tabstop>share_PushButton</tabstop>
   <tabstop>announce_PushButton</tabstop>

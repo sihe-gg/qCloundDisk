@@ -20,12 +20,14 @@ SOURCES += \
     main.cpp \
     log.cpp \
     modifypasswd.cpp \
+    multithread.cpp \
     upload.cpp
 
 HEADERS += \
     log.h \
     logininfodata.h \
     modifypasswd.h \
+    multithread.h \
     upload.h
 
 FORMS += \
