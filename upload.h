@@ -93,7 +93,7 @@ public:
     void delFile(userFileInfo *delInfo);                   // 发送服务器要删除的文件
     void shareFile(userFileInfo *shareInfo);                 // 发送服务器要共享的文件
     void cancelShareFile(userFileInfo *cancelShareInfo);           // 发送服务器要取消分享的文件
-    void fileAttribute(userFileInfo *attributeInfo);   // 文件属性
+    void fileAttribute(userFileInfo *attributeInfo, int flag);   // 文件属性
 
     void updateApplication();                       // 更新软件
 
@@ -163,7 +163,8 @@ private:
     QMenu *m_uploadMenu;
     QAction *m_delFilePathAction;
 
-    //QMessageBox *m_message;                     // 自定义messagebox
+    QMessageBox *m_message;                     // 自定义消息 messagebox
+    QMessageBox *m_propertyMessage;
 
     static int m_fileNumber;
 
