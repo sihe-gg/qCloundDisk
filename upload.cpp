@@ -73,6 +73,7 @@ void upload::initUploadWindow()
     m_model->setHeaderData(0, Qt::Horizontal, "#");
     m_model->setHeaderData(1, Qt::Horizontal, "名称");
     m_model->setHeaderData(2, Qt::Horizontal, "文件大小");
+    m_model->setHeaderData(2, Qt::Horizontal, (int)(Qt::AlignRight|Qt::AlignVCenter), Qt::TextAlignmentRole);
     m_model->setHeaderData(3, Qt::Horizontal, "进度");
     m_model->setHeaderData(4, Qt::Horizontal, "#");
     // delegate 初始化
@@ -80,6 +81,9 @@ void upload::initUploadWindow()
     // QTreeView 初始化
     ui->download_TreeView->setModel(m_model);
     ui->download_TreeView->setItemDelegate(m_delegate);
+    ui->download_TreeView->setColumnWidth(1,200);
+    ui->download_TreeView->setColumnWidth(2,100);
+    ui->download_TreeView->setColumnWidth(3,150);
 
     m_timer = new QTimer(this);
 
