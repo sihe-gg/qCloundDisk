@@ -1,13 +1,16 @@
 #include "upload.h"
 #include "ui_upload.h"
+#include <QMetaType>
 
 int upload::m_fileNumber = 1;
+int upload::m_treeCurrentRow = 0;      // QTreeView 当前行数
 
 upload::upload(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::upload)
 {
     ui->setupUi(this);
+    qRegisterMetaType<QVector<int>>("QVector<int>");
 
     initUploadWindow();
     initStyleSheet();    // 设置css样式表
@@ -62,6 +65,23 @@ void upload::initUploadWindow()
 
     ui->uploadFile_ListWidget->setProperty("contextMenuPolicy", Qt::CustomContextMenu);
     ui->uploadFile_ListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);//选择多个item
+
+//-------------------------------- model-view-delegate -----------------------------------
+    // model 初始化设置
+    m_model = new QStandardItemModel();
+    m_model->setColumnCount(5);
+    m_model->setHeaderData(0, Qt::Horizontal, "#");
+    m_model->setHeaderData(1, Qt::Horizontal, "名称");
+    m_model->setHeaderData(2, Qt::Horizontal, "文件大小");
+    m_model->setHeaderData(3, Qt::Horizontal, "进度");
+    m_model->setHeaderData(4, Qt::Horizontal, "#");
+    // delegate 初始化
+    m_delegate = new delegate(ui->download_TreeView);
+    // QTreeView 初始化
+    ui->download_TreeView->setModel(m_model);
+    ui->download_TreeView->setItemDelegate(m_delegate);
+
+    m_timer = new QTimer(this);
 
     //=============================信号与槽===================================
     connect(ui->close_ToolButton, &QToolButton::clicked,[=](){
@@ -194,9 +214,7 @@ void upload::initThread()
 
     connect(this, &upload::startRunning, m_worker, &MultiThread::startDownload);
     connect(m_downloadThread, &QThread::finished, m_worker, &QObject::deleteLater);
-    connect(m_worker, &MultiThread::resultReady, this, &upload::receivResult);
-
-    qDebug() << "main ThreadId: " << QThread::currentThreadId();
+    //connect(m_worker, &MultiThread::resultReady, this, &upload::receivResult);
 }
 
 void upload::addMenuAction()
@@ -330,8 +348,6 @@ void upload::executeAction(QAction *action)
     {
         int ret = QMessageBox::information(this, "下载", tr("您确定下载这 %1 项吗？").arg(myFileItems.size()),
                                             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-        dir = QFileDialog::getExistingDirectory(this, "选择目录",
-                                                "C:/", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
         switch (ret)
         {
@@ -340,6 +356,9 @@ void upload::executeAction(QAction *action)
         default:
             break;
         }
+        dir = QFileDialog::getExistingDirectory(this, "选择目录",
+                                                QDir::currentPath(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
     }
 
 //----------------------------------------------------------------------------
@@ -813,7 +832,7 @@ void upload::shareFile(userFileInfo *shareInfo)
         if("001" == status)
         {
             // 添加至共享列表
-            QListWidgetItem *item = new QListWidgetItem;
+            QListWidgetItem *item = new QListWidgetItem();
             QIcon icon;
             icon.addFile(getListIcon(shareInfo->m_suffix.toUtf8().data()));
             item->setSizeHint(QSize(ICONWIDTH, ICONHEIGHT));
@@ -1036,19 +1055,60 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
 
     QString filePath = dir + "/" + downloadInfo->m_filename;
 
+    // 用 delegate 实现动态进度条
+    m_model->setItem(m_treeCurrentRow, 0, new QStandardItem("*"));
+    m_model->setItem(m_treeCurrentRow, 1, new QStandardItem(downloadInfo->m_filename));
+    m_model->setItem(m_treeCurrentRow, 2, new QStandardItem(QString::number(downloadInfo->m_size)));
+    m_model->setItem(m_treeCurrentRow, 3, new QStandardItem("0"));
+    m_model->setItem(m_treeCurrentRow, 4, new QStandardItem("*"));
+    ui->download_TreeView->setModel(m_model);
+
+    // set row and value
+    struct DownloadTreeView *downloadTree = new DownloadTreeView;
+    downloadTree->m_row = m_treeCurrentRow;
+    downloadTree->m_value = 0;
+    // push back
+    m_downloadTreeVector.push_back(downloadTree);
+
+
     // 开始线程
     m_downloadThread->start();
 
     // 传给多线程下载
-    emit startRunning(filePath, loginInstance->getAddress(), loginInstance->getUserName(), downloadInfo->m_filename,
+    emit startRunning(m_treeCurrentRow, filePath, loginInstance->getAddress(), loginInstance->getUserName(), downloadInfo->m_filename,
                       downloadInfo->m_md5, QString::number(downloadInfo->m_size));
 
-//    m_message->setDetailedText(m_message->detailedText() + tr("文件 %1 下载成功！\n").arg(downloadInfo->m_filename));
+    // progressBar value has been changed;
+    connect(m_worker, &MultiThread::resultReady, [=](int row, int value){
+        QVector<DownloadTreeView *>::iterator ite = m_downloadTreeVector.begin();
+        for (; ite != m_downloadTreeVector.end(); ite++)
+        {
+            if((*ite)->m_row == row)
+            {
+                break;
+            }
+        }
 
+        // value to set
+        (*ite)->m_value = value;
+    });
 
-//    m_message->setDetailedText(m_message->detailedText() + tr("连接服务器失败，文件 %1 下载失败！\n").arg(downloadInfo->m_filename));
+    // 接收线程传来的进度条信号
+    connect(m_worker, &MultiThread::timerSentTimeOut, [=](int row){
+        QVector<DownloadTreeView *>::iterator ite = m_downloadTreeVector.begin();
+        for (; ite != m_downloadTreeVector.end(); ite++)
+        {
+            if((*ite)->m_row == row)
+            {
+                break;
+            }
+        }
+        // find row to set value
+        m_model->setData(m_model->index((*ite)->m_row, 3), (*ite)->m_value);
+    });
 
-
+    // 行数++
+    m_treeCurrentRow++;
 }
 
 QString upload::getListIcon(char *suffix)
@@ -1174,28 +1234,12 @@ void upload::deleteList()
     }
 }
 
-// 临时打印容器信息
-void upload::paintVector()
-{
-    QVector<userFileInfo *>::iterator ite = m_shareVector.begin();
-
-    for (; ite != m_shareVector.end(); ite++)
-    {
-        qDebug() << "filename:" << (*ite)->m_filename << "QlistWidgetItem:" << (*ite)->m_list;
-    }
-}
-
-// 接收线程回复的结果
-void upload::receivResult(const QString &str)
-{
-    qDebug() << "str == "  << str;
-}
-
 void upload::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     QPixmap pix(":/images/title_bk.jpg");
     painter.drawPixmap(0, 0, this->width(), this->height(), pix);
+    painter.end();
 }
 
 void upload::mouseMoveEvent(QMouseEvent *event)

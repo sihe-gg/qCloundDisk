@@ -29,10 +29,14 @@
 #include <QTextCodec>
 #include <QDateTime>
 #include <QThread>
+#include <QProgressBar>
+#include <QStandardItemModel>
+#include <QTimer>
 
 #include "logininfodata.h"
 #include "modifypasswd.h"
 #include "multithread.h"
+#include "delegate.h"
 
 // 版本号
 const QString VERSION = "V1.0";
@@ -40,7 +44,7 @@ const QString VERSION = "V1.0";
 const int MAINFILE = 1;
 const int SHAREFILE = 2;
 
-// ListWidget图标尺寸
+// ListWidget 图标尺寸
 const int ICONWIDTH = 115;
 const int ICONHEIGHT = 110;
 
@@ -57,6 +61,11 @@ struct userFileInfo{
     bool m_isShare;
 
     QListWidgetItem *m_list;        //存储item地址
+};
+// 下载列表的 value 和 row
+struct DownloadTreeView{
+    int m_row;
+    int m_value;
 };
 
 namespace Ui {
@@ -90,10 +99,10 @@ public:
                           QString filename, QString md5, long size, int downloadCount, QString fileDate);
 
     void downloadFile(userFileInfo *downloadInfo, QString dir); // 发送服务器要下载的文件
-    void delFile(userFileInfo *delInfo);                   // 发送服务器要删除的文件
-    void shareFile(userFileInfo *shareInfo);                 // 发送服务器要共享的文件
-    void cancelShareFile(userFileInfo *cancelShareInfo);           // 发送服务器要取消分享的文件
-    void fileAttribute(userFileInfo *attributeInfo, int flag);   // 文件属性
+    void delFile(userFileInfo *delInfo);                        // 发送服务器要删除的文件
+    void shareFile(userFileInfo *shareInfo);                    // 发送服务器要共享的文件
+    void cancelShareFile(userFileInfo *cancelShareInfo);        // 发送服务器要取消分享的文件
+    void fileAttribute(userFileInfo *attributeInfo, int flag);  // 文件属性
 
     void updateApplication();                       // 更新软件
 
@@ -103,14 +112,12 @@ public:
     QString getSuffix(const QString suffix);        // 根据文件后缀提供Content-type
 
     void deleteList();                              // 刷新时清理用户item
-    void paintVector();                             // 临时打印容器信息
 
 signals:
     void switchUser();                              // 切换用户
 
-    void startRunning(QString filePath, QString addr, QString username, QString filename, QString md5, QString size);                            // 触发线程
-public slots:
-    void receivResult(const QString &str);          // 接收线程中的结果
+    void startRunning(int row, QString filePath, QString addr, QString username,
+                      QString filename, QString md5, QString size); // 触发线程
 
 protected:
     void paintEvent(QPaintEvent *);
@@ -167,12 +174,19 @@ private:
     QMessageBox *m_propertyMessage;
 
     static int m_fileNumber;
+    static int m_treeCurrentRow;                // QTreeView 行数
 
     ModifyPasswd *m_modifyPwd;                  // 修改密码
 
     QThread *m_downloadThread;
     MultiThread *m_worker;
 
+    // model-view-delegate
+    delegate *m_delegate;
+    QStandardItemModel *m_model;
+    QTimer *m_timer;
+    // storage DownloadTreeView*
+    QVector<DownloadTreeView *> m_downloadTreeVector;
 };
 
 #endif // UPLOAD_H

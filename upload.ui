@@ -13,13 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_18" rowstretch="0,0">
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
-    <number>18</number>
-   </property>
+  <layout class="QGridLayout" name="gridLayout_18">
    <item row="0" column="0">
     <widget class="QWidget" name="widget_13" native="true">
      <layout class="QGridLayout" name="gridLayout_4">
@@ -225,7 +219,7 @@
             <bool>false</bool>
            </property>
            <property name="currentIndex">
-            <number>3</number>
+            <number>4</number>
            </property>
            <widget class="QWidget" name="upload_page">
             <layout class="QGridLayout" name="gridLayout_6">
@@ -543,16 +537,11 @@
             </layout>
            </widget>
            <widget class="QWidget" name="download_Page">
-            <widget class="QTableWidget" name="download_TableWidget">
-             <property name="geometry">
-              <rect>
-               <x>10</x>
-               <y>10</y>
-               <width>521</width>
-               <height>461</height>
-              </rect>
-             </property>
-            </widget>
+            <layout class="QGridLayout" name="gridLayout_20">
+             <item row="0" column="0">
+              <widget class="QTreeView" name="download_TreeView"/>
+             </item>
+            </layout>
            </widget>
           </widget>
          </item>

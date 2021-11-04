@@ -9,7 +9,8 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QFile>
-
+#include <QProgressBar>
+#include <QTimer>
 
 class MultiThread : public QObject
 {
@@ -18,10 +19,13 @@ public:
     explicit MultiThread(QObject *parent = nullptr);
 
 signals:
-    void resultReady(const QString &str);     // 向外界发送结果
+    void resultReady(int row, int progressValue);     // 向外界发送结果
+
+    void timerSentTimeOut(int row);
 
 public slots:
-    void startDownload(QString filePath, QString addr, QString username, QString filename, QString md5, QString size);   //耗时下载操作
+    void startDownload(int row, QString filePath, QString addr, QString username,
+                       QString filename, QString md5, QString size);   //耗时下载操作
 
 };
 
