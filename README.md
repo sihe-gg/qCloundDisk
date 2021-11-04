@@ -5,4 +5,4 @@
 
 学习黑马 c++32 期后，根据云盘项目改写，客户端实现文件上传下载分享删除等功能。
 
-服务端基于 nginx + fastcgi + spawn-fcgi 架设，全部 C 代码编写，利用 spawn-fcgi 启动，具体请到主页查看。
+服务端基于 nginx + fastcgi + spawn-fcgi 架设，服务器全部 C 代码编写，利用 spawn-fcgi 启动，具体请到主页查看。
