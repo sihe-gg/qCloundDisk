@@ -68,6 +68,23 @@ struct DownloadTreeView{
     int m_value;
 };
 
+// Download_TreeView 列名称
+enum TreeViewColumn{
+    EMPTYFIR,
+    FILENAME,
+    FILESIZE,
+    PROGRESS,
+    EMPTYSEC,
+    COL_COUNT
+};
+enum HumanSize{
+    Bytes,
+    KB,
+    MB,
+    GB,
+    TB
+};
+
 namespace Ui {
 class upload;
 }
@@ -112,6 +129,8 @@ public:
     QString getSuffix(const QString suffix);        // 根据文件后缀提供Content-type
 
     void deleteList();                              // 刷新时清理用户item
+
+    QString humanFileSize(qint64 size);             // 转化文件大小
 
 signals:
     void switchUser();                              // 切换用户

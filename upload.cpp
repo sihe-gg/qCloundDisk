@@ -69,13 +69,13 @@ void upload::initUploadWindow()
 //-------------------------------- model-view-delegate -----------------------------------
     // model 初始化设置
     m_model = new QStandardItemModel();
-    m_model->setColumnCount(5);
-    m_model->setHeaderData(0, Qt::Horizontal, "#");
-    m_model->setHeaderData(1, Qt::Horizontal, "名称");
-    m_model->setHeaderData(2, Qt::Horizontal, "文件大小");
-    m_model->setHeaderData(2, Qt::Horizontal, (int)(Qt::AlignRight|Qt::AlignVCenter), Qt::TextAlignmentRole);
-    m_model->setHeaderData(3, Qt::Horizontal, "进度");
-    m_model->setHeaderData(4, Qt::Horizontal, "#");
+    m_model->setColumnCount(COL_COUNT);
+    m_model->setHeaderData(EMPTYFIR, Qt::Horizontal, "#");
+    m_model->setHeaderData(FILENAME, Qt::Horizontal, "名称");
+    m_model->setHeaderData(FILESIZE, Qt::Horizontal, "文件大小");
+    m_model->setHeaderData(FILESIZE, Qt::Horizontal, (int)(Qt::AlignRight|Qt::AlignVCenter), Qt::TextAlignmentRole);
+    m_model->setHeaderData(PROGRESS, Qt::Horizontal, "进度");
+    m_model->setHeaderData(EMPTYSEC, Qt::Horizontal, "#");
     // delegate 初始化
     m_delegate = new delegate(ui->download_TreeView);
     // QTreeView 初始化
@@ -84,6 +84,7 @@ void upload::initUploadWindow()
     ui->download_TreeView->setColumnWidth(1,200);
     ui->download_TreeView->setColumnWidth(2,100);
     ui->download_TreeView->setColumnWidth(3,150);
+    ui->download_TreeView->setAlternatingRowColors(true);
 
     m_timer = new QTimer(this);
 
@@ -347,15 +348,22 @@ void upload::executeAction(QAction *action)
         m_message->setStandardButtons(QMessageBox::Ok);
     }
 
+    QList<QListWidgetItem *> tempItems = myFileItems.size() > 0 ? myFileItems:myShareItems.size() > 0 ? myShareItems:otherShareItems;
+
     // 选择下载目录
     if(action == m_downloadAction || action == m_myShareDownloadAction || action == m_otherShareDownloadAction)
     {
-        int ret = QMessageBox::information(this, "下载", tr("您确定下载这 %1 项吗？").arg(myFileItems.size()),
-                                            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+        int ret = QMessageBox::information(this, "下载", tr("您确定下载这 %1 项吗？").
+                                           arg(QString::number(tempItems.size())),
+                                           QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 
         switch (ret)
         {
         case QMessageBox::No:
+            for (int i = 0; i < tempItems.size(); i++)
+            {
+                tempItems[i]->setSelected(false);
+            }
             return;
         default:
             break;
@@ -955,7 +963,7 @@ void upload::fileAttribute(userFileInfo *attributeInfo, int flag)
                                               "文件md5：%3\n"
                                               "上传日期：%4\n"
                                               "是否共享：%5").
-                                      arg(attributeInfo->m_filename).arg(attributeInfo->m_size)
+                                      arg(attributeInfo->m_filename).arg(humanFileSize(attributeInfo->m_size))
                                       .arg(attributeInfo->m_md5).arg(attributeInfo->m_date)
                                       .arg(attributeInfo->m_isShare == true ? "是":"否"));
     }
@@ -968,7 +976,7 @@ void upload::fileAttribute(userFileInfo *attributeInfo, int flag)
                                               "共享日期：%5\n"
                                               "下载次数：%6").
                                       arg(attributeInfo->m_filename).arg(attributeInfo->m_username)
-                                      .arg(attributeInfo->m_size).arg(attributeInfo->m_md5)
+                                      .arg(humanFileSize(attributeInfo->m_size)).arg(attributeInfo->m_md5)
                                       .arg(attributeInfo->m_date).arg(attributeInfo->m_downloadCount));
     }
 
@@ -1060,11 +1068,11 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
     QString filePath = dir + "/" + downloadInfo->m_filename;
 
     // 用 delegate 实现动态进度条
-    m_model->setItem(m_treeCurrentRow, 0, new QStandardItem("*"));
-    m_model->setItem(m_treeCurrentRow, 1, new QStandardItem(downloadInfo->m_filename));
-    m_model->setItem(m_treeCurrentRow, 2, new QStandardItem(QString::number(downloadInfo->m_size)));
-    m_model->setItem(m_treeCurrentRow, 3, new QStandardItem("0"));
-    m_model->setItem(m_treeCurrentRow, 4, new QStandardItem("*"));
+    m_model->setItem(m_treeCurrentRow, EMPTYFIR, new QStandardItem("*"));
+    m_model->setItem(m_treeCurrentRow, FILENAME, new QStandardItem(downloadInfo->m_filename));
+    m_model->setItem(m_treeCurrentRow, FILESIZE, new QStandardItem(humanFileSize(downloadInfo->m_size)));
+    m_model->setItem(m_treeCurrentRow, PROGRESS, new QStandardItem("0"));
+    m_model->setItem(m_treeCurrentRow, EMPTYSEC, new QStandardItem("*"));
     ui->download_TreeView->setModel(m_model);
 
     // set row and value
@@ -1082,7 +1090,7 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
     emit startRunning(m_treeCurrentRow, filePath, loginInstance->getAddress(), loginInstance->getUserName(), downloadInfo->m_filename,
                       downloadInfo->m_md5, QString::number(downloadInfo->m_size));
 
-    // progressBar value has been changed;
+    // progressBar value changing;
     connect(m_worker, &MultiThread::resultReady, [=](int row, int value){
         QVector<DownloadTreeView *>::iterator ite = m_downloadTreeVector.begin();
         for (; ite != m_downloadTreeVector.end(); ite++)
@@ -1093,7 +1101,7 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
             }
         }
 
-        // value to set
+        // set value
         (*ite)->m_value = value;
     });
 
@@ -1107,11 +1115,11 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
                 break;
             }
         }
-        // find row to set value
+        // from row to set value
         m_model->setData(m_model->index((*ite)->m_row, 3), (*ite)->m_value);
     });
 
-    // 行数++
+    // total row++
     m_treeCurrentRow++;
 }
 
@@ -1236,6 +1244,38 @@ void upload::deleteList()
         delete temp->m_list;
         delete temp;
     }
+}
+
+QString upload::humanFileSize(qint64 size)
+{
+    QStringList units;
+    units << "B" << "KB" << "MB" << "GB" << "TB";
+    double mod = 1024.0;
+    double fileSize = size;
+    int i = 0;
+    long rest = 0;
+    QString result;
+
+    while(fileSize >= mod && i < units.count() - 1)
+    {
+        rest = (long)fileSize % (long)mod;
+        fileSize /= mod;
+        i++;
+    }
+    // 取整数
+    int temp = (int)fileSize;
+    result = QString::number(temp);
+
+    if(rest > 0)
+    {
+        result += QString(".") + QString::number(rest).left(2) + QString(" ");
+    }
+
+    result += units[i];
+
+    qDebug()<<"human" << result;
+
+    return result;
 }
 
 void upload::paintEvent(QPaintEvent *)
