@@ -70,19 +70,15 @@ struct DownloadTreeView{
 
 // Download_TreeView 列名称
 enum TreeViewColumn{
-    EMPTYFIR,
-    FILENAME,
-    FILESIZE,
-    PROGRESS,
-    EMPTYSEC,
-    COL_COUNT
-};
-enum HumanSize{
-    Bytes,
-    KB,
-    MB,
-    GB,
-    TB
+    EMPTY_FIR,                      // 空
+    FILENAME,                       // 文件名称
+    FILESIZE,                       // 文件大小
+    PROGRESS,                       // 进度
+//    OPEN_FILE,                      // 打开文件
+//    OPEN_FOLDER,                    // 打开文件夹
+//    DEL_FILE,                       // 删除文件
+    EMPTY_SEC,                      // 空
+    COL_COUNT                       // 总数
 };
 
 namespace Ui {

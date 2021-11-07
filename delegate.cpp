@@ -6,21 +6,6 @@ delegate::delegate(QWidget *parent)
     this->setParent(parent);
 }
 
-//QWidget *delegate::createEditor(QWidget *parent,
-//                                const QStyleOptionViewItem &option,
-//                                const QModelIndex &index) const
-//{
-//    QProgressBar *bar = new QProgressBar(parent);
-//    bar->setMaximum(100);
-//    bar->setValue(20);
-//    bar->setAlignment(Qt::AlignCenter);
-
-//    qDebug() << "index" << index.data().toInt();
-//    //bar->setValue(index.data().toInt());
-
-//    return bar;
-//}
-
 void delegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     if(index.isValid() && index.column() == 3)
@@ -30,7 +15,6 @@ void delegate::paint(QPainter *painter, const QStyleOptionViewItem &option, cons
         bar.rect = option.rect;
 
         bar.progress = index.data().toInt();
-        //bar.progress = index.model()->data(index, Qt::UserRole).toInt();
         bar.maximum = 100;
         bar.minimum = 0;
         bar.text = QString::number(bar.progress) + "%";

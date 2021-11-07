@@ -15,7 +15,7 @@ void MultiThread::startDownload(int row, QString filePath, QString addr, QString
     QFile *file = new QFile(filePath);
     if(!file->open(QIODevice::WriteOnly))
     {
-        //QMessageBox::warning(this, "创建文件" , "创建文件失败，请重试！");
+        QMessageBox::warning(NULL, "创建文件" , "创建文件失败，请重试！");
 
         file->deleteLater();
         return;
@@ -49,10 +49,6 @@ void MultiThread::startDownload(int row, QString filePath, QString addr, QString
     connect(reply, &QNetworkReply::downloadProgress, [=](qint64 bytesReceived, qint64 bytesTotal){
         if(bytesTotal == 0)
         {
-            if(timer->isActive())
-            {
-                timer->stop();
-            }
             return;
         }
 
@@ -64,11 +60,22 @@ void MultiThread::startDownload(int row, QString filePath, QString addr, QString
 
     // 下载完成释放资源及递归调用下载
     connect(reply, &QNetworkReply::finished, [=](){
-        file->close();
-        file->deleteLater();
-        reply->deleteLater();
-        manager->deleteLater();
-        qDebug() << "下载完成，释放资源完成";
+        // 延迟关闭定时器
+        timer->singleShot(1000, this, [=](){
+            if(timer->isActive())
+            {
+                qDebug() << "timer stop";
+                timer->stop();
+            }
+
+            file->close();
+            file->deleteLater();
+            timer->deleteLater();
+            reply->deleteLater();
+            manager->deleteLater();
+
+            qDebug() << "下载完成，释放资源完成";
+        });
     });
 
     // 下载错误检查
@@ -80,6 +87,7 @@ void MultiThread::startDownload(int row, QString filePath, QString addr, QString
         {
             if(timer->isActive())
             {
+                qDebug() << "timer stop";
                 timer->stop();
             }
             file->close();

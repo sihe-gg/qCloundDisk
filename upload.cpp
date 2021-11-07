@@ -70,12 +70,12 @@ void upload::initUploadWindow()
     // model 初始化设置
     m_model = new QStandardItemModel();
     m_model->setColumnCount(COL_COUNT);
-    m_model->setHeaderData(EMPTYFIR, Qt::Horizontal, "#");
+    m_model->setHeaderData(EMPTY_FIR, Qt::Horizontal, "#");
     m_model->setHeaderData(FILENAME, Qt::Horizontal, "名称");
     m_model->setHeaderData(FILESIZE, Qt::Horizontal, "文件大小");
     m_model->setHeaderData(FILESIZE, Qt::Horizontal, (int)(Qt::AlignRight|Qt::AlignVCenter), Qt::TextAlignmentRole);
     m_model->setHeaderData(PROGRESS, Qt::Horizontal, "进度");
-    m_model->setHeaderData(EMPTYSEC, Qt::Horizontal, "#");
+    m_model->setHeaderData(EMPTY_SEC, Qt::Horizontal, "#");
     // delegate 初始化
     m_delegate = new delegate(ui->download_TreeView);
     // QTreeView 初始化
@@ -1068,11 +1068,23 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
     QString filePath = dir + "/" + downloadInfo->m_filename;
 
     // 用 delegate 实现动态进度条
-    m_model->setItem(m_treeCurrentRow, EMPTYFIR, new QStandardItem("*"));
-    m_model->setItem(m_treeCurrentRow, FILENAME, new QStandardItem(downloadInfo->m_filename));
-    m_model->setItem(m_treeCurrentRow, FILESIZE, new QStandardItem(humanFileSize(downloadInfo->m_size)));
-    m_model->setItem(m_treeCurrentRow, PROGRESS, new QStandardItem("0"));
-    m_model->setItem(m_treeCurrentRow, EMPTYSEC, new QStandardItem("*"));
+    QStandardItem *treeEmpty_First = new QStandardItem("*");
+    treeEmpty_First->setEditable(false);
+    QStandardItem *treeFileName = new QStandardItem(downloadInfo->m_filename);
+    treeFileName->setEditable(false);
+    QStandardItem *treeFileSize = new QStandardItem(humanFileSize(downloadInfo->m_size));
+    treeFileSize->setEditable(false);
+    treeFileSize->setTextAlignment(Qt::AlignRight|Qt::AlignVCenter);
+    QStandardItem *treeProgressBar = new QStandardItem("0");
+    treeProgressBar->setEditable(false);
+    QStandardItem *treeEmpty_Second = new QStandardItem("*");
+    treeEmpty_Second->setEditable(false);
+
+    m_model->setItem(m_treeCurrentRow, EMPTY_FIR, treeEmpty_First);
+    m_model->setItem(m_treeCurrentRow, FILENAME, treeFileName);
+    m_model->setItem(m_treeCurrentRow, FILESIZE, treeFileSize);
+    m_model->setItem(m_treeCurrentRow, PROGRESS, treeProgressBar);
+    m_model->setItem(m_treeCurrentRow, EMPTY_SEC, treeEmpty_Second);
     ui->download_TreeView->setModel(m_model);
 
     // set row and value

@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QProgressBar>
 #include <QTimer>
+#include <QMessageBox>
 
 class MultiThread : public QObject
 {
