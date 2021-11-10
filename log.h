@@ -63,6 +63,8 @@ public:
     // 升级
     void updateApplication();
 
+    virtual void keyPressEvent(QKeyEvent *event);
+
 protected:
     //重写鼠标按下事件
     void mousePressEvent(QMouseEvent *e);
@@ -76,7 +78,7 @@ private:
     QPoint m_point;
     upload *m_uploadWindows;
 
-    bool m_loginTimeOut = true;
+    bool m_loginTimeOut = true;         // 登录超时
 
     //创建单例对象
     LoginInfoData *m_loginInstance;

@@ -17,9 +17,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     delegate.cpp \
+    log.cpp \
     logininfodata.cpp \
     main.cpp \
-    log.cpp \
     modifypasswd.cpp \
     multithread.cpp \
     upload.cpp

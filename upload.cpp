@@ -75,18 +75,18 @@ void upload::initUploadWindow()
     m_model->setHeaderData(FILESIZE, Qt::Horizontal, "文件大小");
     m_model->setHeaderData(FILESIZE, Qt::Horizontal, (int)(Qt::AlignRight|Qt::AlignVCenter), Qt::TextAlignmentRole);
     m_model->setHeaderData(PROGRESS, Qt::Horizontal, "进度");
-    m_model->setHeaderData(EMPTY_SEC, Qt::Horizontal, "#");
+    m_model->setHeaderData(OPERATE_FILE, Qt::Horizontal, "操作");
     // delegate 初始化
     m_delegate = new delegate(ui->download_TreeView);
     // QTreeView 初始化
     ui->download_TreeView->setModel(m_model);
     ui->download_TreeView->setItemDelegate(m_delegate);
-    ui->download_TreeView->setColumnWidth(1,200);
-    ui->download_TreeView->setColumnWidth(2,100);
-    ui->download_TreeView->setColumnWidth(3,150);
+    ui->download_TreeView->setColumnWidth(FILENAME,360);
+    ui->download_TreeView->setColumnWidth(FILESIZE,220);
+    ui->download_TreeView->setColumnWidth(PROGRESS,150);
+    ui->download_TreeView->setColumnWidth(OPERATE_FILE,120);
     ui->download_TreeView->setAlternatingRowColors(true);
-
-    m_timer = new QTimer(this);
+    ui->download_TreeView->setMouseTracking(true);
 
     //=============================信号与槽===================================
     connect(ui->close_ToolButton, &QToolButton::clicked,[=](){
@@ -127,86 +127,83 @@ void upload::initUploadWindow()
     connect(ui->otherShare_ListWidget, &QListWidget::customContextMenuRequested, [=](){
         m_otherShareMenu->exec(QCursor::pos());
     });
-}
 
-void upload::initStyleSheet()
-{
-    QString styleSheet = "upload * \
-    {\
-        font-family: Arial;\
-        font-size: 20px;\
-    }\
-    QListWidget#myShare_ListWidget, #otherShare_ListWidget, #myFile_ListWidget\
-    {\
-        font-size: 16px;\
-    }\
-    QLabel#myshare_Label, #othershare_Label\
-    {\
-        font-size: 30px;\
-        color: white;\
-    }\
-    QLabel#uploadFontLabel\
-    {\
-        font-size: 25px;\
-        font-weight: bold;\
-        color: white;\
-    }\
-    QPushButton {\
-          border: 2px solid #8f8f91;\
-          border-radius: 6px;\
-          background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
-                                            stop: 0 #f6f7fa, stop: 1 #dadbde);\
-          min-width: 80px;\
-    }\
-    QPushButton:pressed {\
-          background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
-                                            stop: 0 #dadbde, stop: 1 #f6f7fa);\
-    }\
-    QPushButton:flat {\
-          border: none;\
-    }\
-    QPushButton:default {\
-          border-color: navy;\
-    }\
-    QListView {\
-          show-decoration-selected: 1;\
-    }\
-    QListView::item:alternate {\
-          background: #EEEEEE;\
-    }\
-    QListView::item:selected {\
-          border: 1px solid #6a6ea9;\
-    }\
-    QListView::item:selected:!active {\
-          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
-                                      stop: 0 #ABAFE5, stop: 1 #8588B2);\
-    }\
-    QListView::item:selected:active {\
-          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
-                                      stop: 0 #6a6ea9, stop: 1 #888dd9);\
-    }\
-    QListView::item:hover {\
-          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
-                                      stop: 0 #FAFBFE, stop: 1 #DCDEF1);\
-    }\
-    QMenu\
-    {\
-          background-color: #e8daef;\
-          border: 1px solid black;\
-    }\
-    QMenu::item\
-    {\
-          background-color: transparent;\
-    }\
-    QMenu::item:selected \
-    {\
-          background-color: #e74c3c;\
-    }\
-    QProgressBar::chunk {\
-          background-color: #05B8CC;\
-          width: 20px;\
-    }";
-    this->setStyleSheet(styleSheet);
+//-------------------------------监听 delegate -----------------------------
+    connect(m_delegate, &delegate::open, [=](QModelIndex index){
+        QVector<DownloadTreeView *>::iterator ite = m_downloadTreeVector.begin();
+        for (; ite != m_downloadTreeVector.end(); ite++)
+        {
+            if((*ite)->m_row == index.row())
+            {
+                break;
+            }
+        }
+        QString dirUrl = (*ite)->m_dirUrl + "/" + (*ite)->m_treeFileName;
+        /* 斜杠转换 /->\\      */
+        dirUrl = QDir::toNativeSeparators(dirUrl);
+        QProcess process;
+        process.startDetached("explorer.exe", QStringList() << "/select," << dirUrl);
+    });
+    connect(m_delegate, &delegate::delData, [=](QModelIndex index){
+        QVector<DownloadTreeView *>::iterator ite = m_downloadTreeVector.begin();
+        for (; ite != m_downloadTreeVector.end(); ite++)
+        {
+            if((*ite)->m_row == index.row())
+            {
+                break;
+            }
+        }
+        int ret = QMessageBox::information(this, "删除", tr("您将从下载列表删除 '%1' ,是否同时也在硬盘上删除文件?").arg((*ite)->m_treeFileName),
+                                 QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::No);
+
+        QList<QStandardItem *> takeItems;
+        QString dir = (*ite)->m_dirUrl + "/" + (*ite)->m_treeFileName;
+        QFile file(dir);
+
+        // 获取在 downloadTreeView 上的行数
+        int currentRow = m_downloadTreeVector.indexOf(*ite);
+        struct DownloadTreeView *dTreeView;
+
+        switch(ret)
+        {
+        case QMessageBox::Yes:
+            // 从 downloadTreeView 取走 item
+            takeItems = m_model->takeRow(currentRow);
+            for (int i = 0; i < takeItems.size(); i++)
+            {
+                delete takeItems[i];
+            }
+            // 从 m_downloadTreeVector 中取走
+
+            dTreeView = m_downloadTreeVector.takeAt(currentRow);
+            delete dTreeView;
+            // 删除硬盘文件
+            file.remove();
+            // 更新
+            updateCurrentRow();
+            m_treeCurrentRow--;
+
+            break;
+        case QMessageBox::No:
+            takeItems = m_model->takeRow(currentRow);
+            for (int i = 0; i < takeItems.size(); i++)
+            {
+                delete takeItems[i];
+            }
+            // 从 m_downloadTreeVector 中取走
+            dTreeView = m_downloadTreeVector.takeAt(currentRow);
+            delete dTreeView;
+            // 更新
+            updateCurrentRow();
+            m_treeCurrentRow--;
+
+            break;
+        case QMessageBox::Cancel:
+            break;
+        default:
+            break;
+        }
+    });
 }
 
 // 初始化线程
@@ -283,11 +280,11 @@ void upload::addMenuAction()
     // ---------分享区-------------
     m_myShareMenu = new QMenu(this);
     m_otherShareMenu = new QMenu(this);
+    m_myShareDownloadAction = new QAction("下载文件", this);
     m_myShareCancelAction = new QAction("取消分享", this);
-    m_myShareDownloadAction = new QAction("下载", this);
-    m_otherShareDownloadAction = new QAction("下载", this);
-    m_myShareMenu->addAction(m_myShareCancelAction);
+    m_otherShareDownloadAction = new QAction("下载文件", this);
     m_myShareMenu->addAction(m_myShareDownloadAction);
+    m_myShareMenu->addAction(m_myShareCancelAction);
     m_myShareMenu->addAction(m_propertyAction);
     m_otherShareMenu->addAction(m_otherShareDownloadAction);
     m_otherShareMenu->addAction(m_propertyAction);
@@ -345,7 +342,7 @@ void upload::executeAction(QAction *action)
     if(action == m_delAction || action == m_shareAction || action == m_myShareCancelAction)
     {
         m_message = new QMessageBox(this);
-        m_message->setStandardButtons(QMessageBox::Ok);
+        m_message->setStandardButtons(QMessageBox::NoButton);
     }
 
     QList<QListWidgetItem *> tempItems = myFileItems.size() > 0 ? myFileItems:myShareItems.size() > 0 ? myShareItems:otherShareItems;
@@ -747,7 +744,6 @@ void upload::addShareFileList(QString username, QString filename, QString md5,
     loginInstance->getUserName() == username ? ui->myShare_ListWidget->addItem(item) : ui->otherShare_ListWidget->addItem(item);
 }
 
-
 // 服务器端删除文件
 void upload::delFile(userFileInfo *delInfo)
 {
@@ -882,6 +878,7 @@ void upload::shareFile(userFileInfo *shareInfo)
     });
 
     connect(reply, &QNetworkReply::finished, [=](){
+        m_message->setStandardButtons(QMessageBox::Ok);
         reply->deleteLater();
         manager->deleteLater();
     });
@@ -942,6 +939,7 @@ void upload::cancelShareFile(userFileInfo *cancelShareInfo)
     });
 
     connect(reply, &QNetworkReply::finished, [=](){
+        m_message->setStandardButtons(QMessageBox::Ok);
         reply->deleteLater();
         manager->deleteLater();
     });
@@ -1056,16 +1054,25 @@ void upload::getUploadFilePath()
     }
 }
 
-// 发送服务器要下载的文件
-void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
+// 检查重复下载
+int upload::checkDownloadViewItem(userFileInfo *downloadInfo, QString dir)
 {
-    if(dir == NULL)
-    {
-        qDebug() << "NULL";
-        return;
-    }
+    int row;
 
-    QString filePath = dir + "/" + downloadInfo->m_filename;
+    if(m_downloadTreeVector.size() > 0)
+    {
+        QVector<DownloadTreeView *>::iterator checkIte = m_downloadTreeVector.begin();
+        for (; checkIte != m_downloadTreeVector.end(); checkIte++)
+        {
+            if((*checkIte)->m_treeFileName == downloadInfo->m_filename)
+            {
+                // 更改传入下载的行、值
+                row = (*checkIte)->m_row;
+                (*checkIte)->m_value = 0;
+                return row;
+            }
+        }
+    }
 
     // 用 delegate 实现动态进度条
     QStandardItem *treeEmpty_First = new QStandardItem("*");
@@ -1077,29 +1084,51 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
     treeFileSize->setTextAlignment(Qt::AlignRight|Qt::AlignVCenter);
     QStandardItem *treeProgressBar = new QStandardItem("0");
     treeProgressBar->setEditable(false);
-    QStandardItem *treeEmpty_Second = new QStandardItem("*");
-    treeEmpty_Second->setEditable(false);
+    QStandardItem *treeOperate_File = new QStandardItem("");
+    treeOperate_File->setEditable(false);
 
     m_model->setItem(m_treeCurrentRow, EMPTY_FIR, treeEmpty_First);
     m_model->setItem(m_treeCurrentRow, FILENAME, treeFileName);
     m_model->setItem(m_treeCurrentRow, FILESIZE, treeFileSize);
     m_model->setItem(m_treeCurrentRow, PROGRESS, treeProgressBar);
-    m_model->setItem(m_treeCurrentRow, EMPTY_SEC, treeEmpty_Second);
+    m_model->setItem(m_treeCurrentRow, OPERATE_FILE, treeOperate_File);
     ui->download_TreeView->setModel(m_model);
 
     // set row and value
     struct DownloadTreeView *downloadTree = new DownloadTreeView;
+    downloadTree->m_dirUrl = dir;
+    downloadTree->m_treeFileName = downloadInfo->m_filename;
     downloadTree->m_row = m_treeCurrentRow;
     downloadTree->m_value = 0;
     // push back
     m_downloadTreeVector.push_back(downloadTree);
 
+    row = m_treeCurrentRow;
+    // total row++
+    m_treeCurrentRow++;
+
+    return row;
+}
+
+// 发送服务器要下载的文件
+void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
+{
+    if(dir == NULL)
+    {
+        qDebug() << "NULL";
+        return;
+    }
+
+    QString filePath = dir + "/" + downloadInfo->m_filename;
+
+    // 是否重复下载
+    int row = checkDownloadViewItem(downloadInfo, dir);
 
     // 开始线程
     m_downloadThread->start();
 
     // 传给多线程下载
-    emit startRunning(m_treeCurrentRow, filePath, loginInstance->getAddress(), loginInstance->getUserName(), downloadInfo->m_filename,
+    emit startRunning(row, filePath, loginInstance->getAddress(), loginInstance->getUserName(), downloadInfo->m_filename,
                       downloadInfo->m_md5, QString::number(downloadInfo->m_size));
 
     // progressBar value changing;
@@ -1130,9 +1159,6 @@ void upload::downloadFile(userFileInfo *downloadInfo, QString dir)
         // from row to set value
         m_model->setData(m_model->index((*ite)->m_row, 3), (*ite)->m_value);
     });
-
-    // total row++
-    m_treeCurrentRow++;
 }
 
 QString upload::getListIcon(char *suffix)
@@ -1288,6 +1314,96 @@ QString upload::humanFileSize(qint64 size)
     qDebug()<<"human" << result;
 
     return result;
+}
+
+// 更新 m_downloadTreeVector->m_row
+void upload::updateCurrentRow()
+{
+    QVector<DownloadTreeView *>::iterator ite = m_downloadTreeVector.begin();
+    for (; ite != m_downloadTreeVector.end(); ite++)
+    {
+        (*ite)->m_row = m_downloadTreeVector.indexOf(*ite);
+    }
+}
+
+void upload::initStyleSheet()
+{
+    QString styleSheet = "upload * \
+    {\
+        font-family: Arial;\
+        font-size: 20px;\
+    }\
+    QListWidget#myShare_ListWidget, #otherShare_ListWidget, #myFile_ListWidget\
+    {\
+        font-size: 16px;\
+    }\
+    QLabel#myshare_Label, #othershare_Label\
+    {\
+        font-size: 30px;\
+        color: white;\
+    }\
+    QLabel#uploadFontLabel\
+    {\
+        font-size: 25px;\
+        font-weight: bold;\
+        color: white;\
+    }\
+    QPushButton {\
+          border: 2px solid #8f8f91;\
+          border-radius: 6px;\
+          background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                            stop: 0 #f6f7fa, stop: 1 #dadbde);\
+          min-width: 80px;\
+    }\
+    QPushButton:pressed {\
+          background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                            stop: 0 #dadbde, stop: 1 #f6f7fa);\
+    }\
+    QPushButton:flat {\
+          border: none;\
+    }\
+    QPushButton:default {\
+          border-color: navy;\
+    }\
+    QListView {\
+          show-decoration-selected: 1;\
+    }\
+    QListView::item:alternate {\
+          background: #EEEEEE;\
+    }\
+    QListView::item:selected {\
+          border: 1px solid #6a6ea9;\
+    }\
+    QListView::item:selected:!active {\
+          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                      stop: 0 #ABAFE5, stop: 1 #8588B2);\
+    }\
+    QListView::item:selected:active {\
+          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                      stop: 0 #6a6ea9, stop: 1 #888dd9);\
+    }\
+    QListView::item:hover {\
+          background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\
+                                      stop: 0 #FAFBFE, stop: 1 #DCDEF1);\
+    }\
+    QMenu\
+    {\
+          background-color: #e8daef;\
+          border: 1px solid black;\
+    }\
+    QMenu::item\
+    {\
+          background-color: transparent;\
+    }\
+    QMenu::item:selected \
+    {\
+          background-color: #e74c3c;\
+    }\
+    QProgressBar::chunk {\
+          background-color: #05B8CC;\
+          width: 20px;\
+    }";
+    this->setStyleSheet(styleSheet);
 }
 
 void upload::paintEvent(QPaintEvent *)

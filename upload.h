@@ -32,6 +32,8 @@
 #include <QProgressBar>
 #include <QStandardItemModel>
 #include <QTimer>
+#include <QDesktopServices>
+#include <QProcess>
 
 #include "logininfodata.h"
 #include "modifypasswd.h"
@@ -50,7 +52,6 @@ const int ICONHEIGHT = 110;
 
 // 用户文件属性
 struct userFileInfo{
-
     QString m_filename;
     QString m_username;
     QString m_md5;
@@ -64,20 +65,19 @@ struct userFileInfo{
 };
 // 下载列表的 value 和 row
 struct DownloadTreeView{
+    QString m_dirUrl;
+    QString m_treeFileName;
     int m_row;
     int m_value;
 };
 
 // Download_TreeView 列名称
 enum TreeViewColumn{
-    EMPTY_FIR,                      // 空
+    EMPTY_FIR,                      // 空行
     FILENAME,                       // 文件名称
     FILESIZE,                       // 文件大小
     PROGRESS,                       // 进度
-//    OPEN_FILE,                      // 打开文件
-//    OPEN_FOLDER,                    // 打开文件夹
-//    DEL_FILE,                       // 删除文件
-    EMPTY_SEC,                      // 空
+    OPERATE_FILE,                   // 操作
     COL_COUNT                       // 总数
 };
 
@@ -111,11 +111,15 @@ public:
     void addShareFileList(QString username,          // 添加共享文件到列表
                           QString filename, QString md5, long size, int downloadCount, QString fileDate);
 
+    // int 返回可以下载的行
+    int checkDownloadViewItem(userFileInfo *downloadInfo, QString dir);// 检查重复下载
     void downloadFile(userFileInfo *downloadInfo, QString dir); // 发送服务器要下载的文件
     void delFile(userFileInfo *delInfo);                        // 发送服务器要删除的文件
     void shareFile(userFileInfo *shareInfo);                    // 发送服务器要共享的文件
     void cancelShareFile(userFileInfo *cancelShareInfo);        // 发送服务器要取消分享的文件
     void fileAttribute(userFileInfo *attributeInfo, int flag);  // 文件属性
+
+
 
     void updateApplication();                       // 更新软件
 
@@ -127,6 +131,7 @@ public:
     void deleteList();                              // 刷新时清理用户item
 
     QString humanFileSize(qint64 size);             // 转化文件大小
+    void updateCurrentRow();                        // 下载区删除文件时更新 m_row
 
 signals:
     void switchUser();                              // 切换用户
@@ -193,13 +198,12 @@ private:
 
     ModifyPasswd *m_modifyPwd;                  // 修改密码
 
-    QThread *m_downloadThread;
+    QThread *m_downloadThread;                  // 线程
     MultiThread *m_worker;
 
     // model-view-delegate
     delegate *m_delegate;
     QStandardItemModel *m_model;
-    QTimer *m_timer;
     // storage DownloadTreeView*
     QVector<DownloadTreeView *> m_downloadTreeVector;
 };

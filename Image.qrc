@@ -95,5 +95,18 @@
         <file>fileIcon/CloundDisk.png</file>
         <file>fileIcon/CloundDisk1.png</file>
         <file>fileIcon/CloundDisk2.png</file>
+        <file>fileIcon/del1.png</file>
+        <file>fileIcon/del2.png</file>
+        <file>fileIcon/del3.png</file>
+        <file>fileIcon/del4.png</file>
+        <file>fileIcon/open1.png</file>
+        <file>fileIcon/open2.png</file>
+        <file>fileIcon/open1press.png</file>
+        <file>fileIcon/del.png</file>
+        <file>fileIcon/delhover.png</file>
+        <file>fileIcon/delpressed.png</file>
+        <file>fileIcon/open.png</file>
+        <file>fileIcon/openhover.png</file>
+        <file>fileIcon/openpressed.png</file>
     </qresource>
 </RCC>

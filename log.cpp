@@ -1,7 +1,6 @@
 #include "log.h"
 #include "ui_log.h"
 
-
 log::log(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::log)
@@ -29,9 +28,6 @@ void log::initWindows()
     //创建单例对象
     m_loginInstance = LoginInfoData::getLoginInfoInstance();
 
-    // 设置快捷键
-    //ui->loginBtn->setShortcut(Qt::Key_Enter); //小键盘
-    ui->loginBtn->setShortcut(Qt::Key_Return);
 
     connect(ui->closeBtn,&QPushButton::clicked,[=](){
         this->close();
@@ -488,6 +484,18 @@ void log::updateApplication()
             return;
         }
     });
+}
+
+void log::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Return)
+    {
+        ui->loginBtn->click();
+    }
+    else if(event->key() == Qt::Key_Enter)
+    {
+        ui->loginBtn->click();
+    }
 }
 
 void log::mousePressEvent(QMouseEvent *e)

@@ -27,7 +27,7 @@
           <enum>QFrame::NoFrame</enum>
          </property>
          <property name="currentIndex">
-          <number>1</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="page_Registered">
           <layout class="QGridLayout" name="gridLayout_7">
@@ -474,7 +474,7 @@
                        </font>
                       </property>
                       <property name="text">
-                       <string>fd00-183-200-10-18.ngrok.io</string>
+                       <string>4478-183-200-10-150.ngrok.io</string>
                       </property>
                       <property name="maxLength">
                        <number>3000</number>
