@@ -34,6 +34,7 @@
 #include <QTimer>
 #include <QDesktopServices>
 #include <QProcess>
+#include <QSettings>
 
 #include "logininfodata.h"
 #include "modifypasswd.h"
@@ -51,13 +52,13 @@ const int ICONWIDTH = 115;
 const int ICONHEIGHT = 110;
 
 // 用户文件属性
-struct userFileInfo{
+struct UserFileInfo{
     QString m_filename;
     QString m_username;
     QString m_md5;
     QString m_suffix;
     QString m_date;
-    long m_size;
+    qint64 m_size;
     int m_downloadCount;
     bool m_isShare;
 
@@ -69,6 +70,7 @@ struct DownloadTreeView{
     QString m_treeFileName;
     int m_row;
     int m_value;
+    qint64 m_treeFileSize;
 };
 
 // Download_TreeView 列名称
@@ -98,6 +100,8 @@ public:
     void initThread();                              // 初始化线程
     void initUserFileList();                        // 初始化用户文件到列表
     void addMenuAction();                           // 初始化菜单栏
+    void readDownloadConfigure();                   // 读取下载区配置
+
     void executeAction(QAction *action);            // 根据菜单执行动作
 
     void uploadFileData();                          // 批量上传文件数据
@@ -112,16 +116,12 @@ public:
                           QString filename, QString md5, long size, int downloadCount, QString fileDate);
 
     // int 返回可以下载的行
-    int checkDownloadViewItem(userFileInfo *downloadInfo, QString dir);// 检查重复下载
-    void downloadFile(userFileInfo *downloadInfo, QString dir); // 发送服务器要下载的文件
-    void delFile(userFileInfo *delInfo);                        // 发送服务器要删除的文件
-    void shareFile(userFileInfo *shareInfo);                    // 发送服务器要共享的文件
-    void cancelShareFile(userFileInfo *cancelShareInfo);        // 发送服务器要取消分享的文件
-    void fileAttribute(userFileInfo *attributeInfo, int flag);  // 文件属性
-
-
-
-    void updateApplication();                       // 更新软件
+    int checkDownloadViewItem(QString filename, qint64 fileSize, QString dir, int value = 0);// 检查重复下载
+    void downloadFile(UserFileInfo *downloadInfo, QString dir); // 发送服务器要下载的文件
+    void delFile(UserFileInfo *delInfo);                        // 发送服务器要删除的文件
+    void shareFile(UserFileInfo *shareInfo);                    // 发送服务器要共享的文件
+    void cancelShareFile(UserFileInfo *cancelShareInfo);        // 发送服务器要取消分享的文件
+    void fileAttribute(UserFileInfo *attributeInfo, int flag);  // 文件属性
 
     void getUploadFilePath();                       // 获取文件路径
     QString getListIcon(char *suffix);              // 根据后缀获取列表图标
@@ -131,7 +131,10 @@ public:
     void deleteList();                              // 刷新时清理用户item
 
     QString humanFileSize(qint64 size);             // 转化文件大小
+
+    void updateApplication();                       // 更新软件
     void updateCurrentRow();                        // 下载区删除文件时更新 m_row
+    void updateConfigFile();                        // 更新配置文件
 
 signals:
     void switchUser();                              // 切换用户
@@ -161,9 +164,9 @@ private:
     // 批量上传区文件模板
     QVector<QListWidgetItem *> m_uploadVector;
     // 我的文件区主界面模板
-    QVector<userFileInfo *> m_vector;
+    QVector<UserFileInfo *> m_vector;
     // 分享区文件模板
-    QVector<userFileInfo *>m_shareVector;
+    QVector<UserFileInfo *>m_shareVector;
 
     // 菜单栏
     // ---------图标设置栏----------
@@ -206,6 +209,9 @@ private:
     QStandardItemModel *m_model;
     // storage DownloadTreeView*
     QVector<DownloadTreeView *> m_downloadTreeVector;
+
+    // config.ini
+    QSettings *m_config;
 };
 
 #endif // UPLOAD_H

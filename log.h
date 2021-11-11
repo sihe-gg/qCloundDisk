@@ -80,6 +80,8 @@ private:
 
     bool m_loginTimeOut = true;         // 登录超时
 
+    QSettings *m_config;
+
     //创建单例对象
     LoginInfoData *m_loginInstance;
 };

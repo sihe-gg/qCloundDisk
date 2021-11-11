@@ -22,12 +22,11 @@ void log::initWindows()
 {
     ui->stackedWidget->setCurrentWidget(ui->page_Login);
     QApplication::setWindowIcon(QIcon(":/fileIcon/CloundDisk2.png"));
+    m_config = new QSettings("UserConfig.ini", QSettings::IniFormat, this);
     //无边框
     setWindowFlags(Qt::FramelessWindowHint);
-
     //创建单例对象
     m_loginInstance = LoginInfoData::getLoginInfoInstance();
-
 
     connect(ui->closeBtn,&QPushButton::clicked,[=](){
         this->close();
@@ -411,11 +410,9 @@ QString log::encryptAndUncrypt(QString src, const QChar key)
 // 初始化登录-记住密码
 void log::initRememberPwd()
 {
-    QSettings config("UserConfig.ini", QSettings::IniFormat);
-
-    QString initName = config.value("username").toString();
-    QString initPwd = config.value("password").toString();
-    QString remember = config.value("remember").toString();
+    QString initName = m_config->value("username").toString();
+    QString initPwd = m_config->value("password").toString();
+    QString remember = m_config->value("remember").toString();
 
     //解密
     initName = encryptAndUncrypt(initName, 'j');
@@ -430,7 +427,6 @@ void log::initRememberPwd()
 }
 void log::saveRememberPwd()
 {
-    QSettings config("UserConfig.ini", QSettings::IniFormat);
     QString initName = ui->loginUserName->text();
     QString initPwd = ui->loginPassword->text();
     QString remember = "true";
@@ -439,16 +435,15 @@ void log::saveRememberPwd()
     initName = encryptAndUncrypt(initName, 'j');
     initPwd = encryptAndUncrypt(initPwd, 'j');
 
-    config.setValue("username", initName);
-    config.setValue("password", initPwd);
-    config.setValue("remember", remember);
-    config.sync();
+    m_config->setValue("username", initName);
+    m_config->setValue("password", initPwd);
+    m_config->setValue("remember", remember);
+    m_config->sync();
 }
 void log::cancelRememberPwd()
 {
-    QSettings config("UserConfig.ini", QSettings::IniFormat);
-    config.setValue("remember", "false");
-    config.sync();
+    m_config->setValue("remember", "false");
+    m_config->sync();
 }
 // 自动获取服务器地址
 void log::updateApplication()
@@ -476,7 +471,7 @@ void log::updateApplication()
             [=](QNetworkReply::NetworkError code)
     {
         qDebug() << "code :" << code;
-        if(code == QNetworkReply::UnknownServerError || QNetworkReply::RemoteHostClosedError)
+        if(code == QNetworkReply::UnknownServerError || code == QNetworkReply::RemoteHostClosedError)
         {
             QMessageBox::critical(this, "自动获取", "服务器连接失败，请手动输入地址或者稍后再试！");
             reply->deleteLater();
