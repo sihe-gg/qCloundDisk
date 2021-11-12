@@ -5,6 +5,11 @@ MultiThread::MultiThread(QObject *parent) : QObject(parent)
 
 }
 
+MultiThread::~MultiThread()
+{
+    qDebug() << "I'm out";
+}
+
 void MultiThread::startDownload(int row, QString filePath, QString addr, QString username,
                                 QString filename, QString md5, QString size)
 {

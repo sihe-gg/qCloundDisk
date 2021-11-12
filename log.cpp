@@ -37,6 +37,12 @@ void log::initWindows()
     connect(ui->configBtn,&QPushButton::clicked,[=](){
         ui->loginUserName->clear();
         ui->loginPassword->clear();
+        // 检查配置记住密码文件ini是否存在
+        QFileInfo iniFile("./UserConfig.ini");
+        if(iniFile.exists())
+        {
+            initRememberPwd();
+        }
         ui->stackedWidget->currentWidget() == ui->page_Login ? ui->stackedWidget->setCurrentWidget(ui->page_Server) : ui->stackedWidget->setCurrentWidget(ui->page_Login);
     });
     connect(ui->registerNowBtn,&QPushButton::clicked,[=](){
@@ -61,62 +67,6 @@ void log::initWindows()
     {
         initRememberPwd();
     }
-}
-void log::initStyleSheet()
-{
-    QString styleSheet = "log\
-    {\
-        border-image: url(:/images/login_bk.jpg);\
-    }\
-    log *\
-    {\
-        font-family: Arial;\
-        font-size: 20px;\
-    }\
-    QLabel#label_2, #label_5, #label_11, #label_12\
-    {\
-        font-size: 30px;\
-        font-weight: bold;\
-    }\
-    QLabel#imageLabel\
-    {\
-        border-image: url(:/images/13.png);\
-    }\
-    QLabel#label_2\
-    {\
-        color:white;\
-    }\
-    QLineEdit\
-    {\
-        font-size: 20px\
-    }\
-    QPushButton#registerNowBtn\
-    {\
-        color: orange;\
-        text-decoration: underline;\
-        border: 0px;\
-    }\
-    QPushButton#loginBtn, #registeredBtn, #serverConfigBtn\
-    {\
-        font-size: 25px;\
-        border-image: url(:/images/balckButton.png);\
-        width: 100px;\
-        height: 40px;\
-        color: white;\
-    }\
-    QCheckBox::indicator {\
-          width: 60px;\
-          height: 60px;\
-    }\
-    QCheckBox::indicator:unchecked\
-    {\
-          image: url(:/images/set2.png);\
-    }\
-    QCheckBox::indicator:checked\
-    {\
-          image: url(:/images/set3.png);\
-    }";
-    this->setStyleSheet(styleSheet);
 }
 
 int log::checkDatas(const int page)
@@ -507,4 +457,61 @@ void log::mouseMoveEvent(QMouseEvent *e)
     {
         this->move(e->globalPos() - m_point);
     }
+}
+
+void log::initStyleSheet()
+{
+    QString styleSheet = "log\
+    {\
+        border-image: url(:/images/login_bk.jpg);\
+    }\
+    log *\
+    {\
+        font-family: Arial;\
+        font-size: 20px;\
+    }\
+    QLabel#label_2, #label_5, #label_11, #label_12\
+    {\
+        font-size: 30px;\
+        font-weight: bold;\
+    }\
+    QLabel#imageLabel\
+    {\
+        border-image: url(:/images/13.png);\
+    }\
+    QLabel#label_2\
+    {\
+        color:white;\
+    }\
+    QLineEdit\
+    {\
+        font-size: 20px\
+    }\
+    QPushButton#registerNowBtn\
+    {\
+        color: orange;\
+        text-decoration: underline;\
+        border: 0px;\
+    }\
+    QPushButton#loginBtn, #registeredBtn, #serverConfigBtn\
+    {\
+        font-size: 25px;\
+        border-image: url(:/images/balckButton.png);\
+        width: 100px;\
+        height: 40px;\
+        color: white;\
+    }\
+    QCheckBox::indicator {\
+          width: 60px;\
+          height: 60px;\
+    }\
+    QCheckBox::indicator:unchecked\
+    {\
+          image: url(:/images/set2.png);\
+    }\
+    QCheckBox::indicator:checked\
+    {\
+          image: url(:/images/set3.png);\
+    }";
+    this->setStyleSheet(styleSheet);
 }

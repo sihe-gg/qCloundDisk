@@ -3,7 +3,6 @@
 #include <QMetaType>
 
 int upload::m_fileNumber = 1;
-int upload::m_treeCurrentRow = 0;      // QTreeView 当前行数
 
 upload::upload(QWidget *parent) :
     QWidget(parent),
@@ -26,6 +25,8 @@ upload::upload(QWidget *parent) :
 
 upload::~upload()
 {
+    //m_downloadThread->wait();
+    m_downloadThread->exit();
     delete ui;
 }
 
@@ -43,7 +44,7 @@ void upload::initUploadWindow()
     // 进度条初始化
     ui->progressBar->setValue(0);
     // 初始化 config.ini
-    m_config = new QSettings("TransferList.ini", QSettings::IniFormat);
+    m_config = new QSettings(QString("TransferList-%1.ini").arg(loginInstance->getUserName()), QSettings::IniFormat);
     m_config->setAtomicSyncRequired(true);
     // QListWidget初始化
     ui->myFile_ListWidget->setProperty("contextMenuPolicy", Qt::CustomContextMenu);
@@ -99,18 +100,23 @@ void upload::initUploadWindow()
         this->close();
     });
     connect(ui->myFile_PushButton, &QPushButton::clicked,[=](){
+        clearItemWidgets();
         ui->stackedWidget->setCurrentWidget(ui->myList_Page);
     });
     connect(ui->upload_PushButton, &QPushButton::clicked,[=](){
+        clearItemWidgets();
         ui->stackedWidget->setCurrentWidget(ui->upload_page);
     });
     connect(ui->share_PushButton, &QPushButton::clicked,[=](){
+        clearItemWidgets();
         ui->stackedWidget->setCurrentWidget(ui->share_Page);
     });
     connect(ui->test_PushButton, &QPushButton::clicked,[=](){
+        clearItemWidgets();
         ui->stackedWidget->setCurrentWidget(ui->test_page);
     });
     connect(ui->download_PushButton, &QPushButton::clicked,[=](){
+        clearItemWidgets();
         ui->stackedWidget->setCurrentWidget(ui->download_Page);
     });
 
@@ -221,6 +227,30 @@ void upload::initUploadWindow()
             break;
         default:
             break;
+        }
+    });
+    // 下载列表双击打开
+    connect(ui->download_TreeView, &QAbstractItemView::doubleClicked, [=](const QModelIndex index){
+        QVector<DownloadTreeView *>::iterator ite = m_downloadTreeVector.begin();
+        for (; ite != m_downloadTreeVector.end(); ite++)
+        {
+            if((*ite)->m_row == index.row())
+            {
+                break;
+            }
+        }
+        QString filePath = (*ite)->m_dirUrl + "/" + (*ite)->m_treeFileName;
+        QFile checkFile(filePath);
+        if(checkFile.exists())
+        {
+            /* 斜杠转换 /->\\      */
+            filePath = QDir::toNativeSeparators(filePath);
+            QProcess process;
+            process.startDetached("explorer.exe", QStringList() << filePath);
+        }
+        else
+        {
+            QMessageBox::information(this, "打开", tr("打开文件 '%1' 失败,文件不存在!").arg((*ite)->m_treeFileName));
         }
     });
 }
@@ -348,7 +378,7 @@ void upload::addMenuAction()
 // 读取下载区列表配置
 void upload::readDownloadConfigure()
 {
-    QFile configFile("./TransferList.ini");
+    QFile configFile(QString("./TransferList-%1.ini").arg(loginInstance->getUserName()));
     if(!configFile.exists())
     {
         return;
@@ -1391,6 +1421,38 @@ void upload::updateConfigFile()
 
     }
     m_config->endArray();
+}
+
+void upload::clearItemWidgets()
+{
+    // 我的文件区创建 selectedItems
+    QList<QListWidgetItem *> myFileItems = ui->myFile_ListWidget->selectedItems();
+    // 我的分享区创建 selectedItems
+    QList<QListWidgetItem *> myShareItems = ui->myShare_ListWidget->selectedItems();
+    // 他人的分享区创建 selectedItems
+    QList<QListWidgetItem *> otherShareItems = ui->otherShare_ListWidget->selectedItems();
+
+    if(myFileItems.size() > 0)
+    {
+        for (int i = 0; i < myFileItems.size(); i++)
+        {
+            myFileItems[i]->setSelected(false);
+        }
+    }
+    if(myShareItems.size() > 0)
+    {
+        for (int i = 0; i < myShareItems.size(); i++)
+        {
+            myShareItems[i]->setSelected(false);
+        }
+    }
+    if(otherShareItems.size() > 0)
+    {
+        for (int i = 0; i < otherShareItems.size(); i++)
+        {
+            otherShareItems[i]->setSelected(false);
+        }
+    }
 }
 
 void upload::initStyleSheet()

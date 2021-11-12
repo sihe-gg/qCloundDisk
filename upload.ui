@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>691</width>
+    <width>722</width>
     <height>647</height>
    </rect>
   </property>
@@ -219,7 +219,7 @@
             <bool>false</bool>
            </property>
            <property name="currentIndex">
-            <number>4</number>
+            <number>3</number>
            </property>
            <widget class="QWidget" name="upload_page">
             <layout class="QGridLayout" name="gridLayout_6">
@@ -453,7 +453,7 @@
              </property>
              <item row="0" column="0">
               <widget class="QWidget" name="widget_11" native="true">
-               <layout class="QGridLayout" name="gridLayout_15">
+               <layout class="QGridLayout" name="gridLayout_14">
                 <property name="leftMargin">
                  <number>0</number>
                 </property>
@@ -464,9 +464,6 @@
                  <number>0</number>
                 </property>
                 <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <property name="spacing">
                  <number>0</number>
                 </property>
                 <item row="0" column="0">
@@ -485,48 +482,19 @@
                     <number>0</number>
                    </property>
                    <property name="spacing">
-                    <number>0</number>
+                    <number>6</number>
                    </property>
                    <item row="0" column="0">
-                    <widget class="QLabel" name="myshare_Label">
-                     <property name="text">
-                      <string>我的分享:</string>
+                    <widget class="QSplitter" name="splitter">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
                      </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QListWidget" name="myShare_ListWidget"/>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QWidget" name="widget_10" native="true">
-                  <layout class="QGridLayout" name="gridLayout_14">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="spacing">
-                    <number>0</number>
-                   </property>
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="othershare_Label">
-                     <property name="text">
-                      <string>别人的分享:</string>
+                     <property name="handleWidth">
+                      <number>0</number>
                      </property>
+                     <widget class="QListWidget" name="myShare_ListWidget"/>
+                     <widget class="QListWidget" name="otherShare_ListWidget"/>
                     </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QListWidget" name="otherShare_ListWidget"/>
                    </item>
                   </layout>
                  </widget>

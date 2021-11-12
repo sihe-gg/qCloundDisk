@@ -18,6 +18,7 @@ class MultiThread : public QObject
     Q_OBJECT
 public:
     explicit MultiThread(QObject *parent = nullptr);
+    ~MultiThread();
 
 signals:
     void resultReady(int row, int progressValue);     // 向外界发送结果

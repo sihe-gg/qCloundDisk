@@ -474,7 +474,7 @@
                        </font>
                       </property>
                       <property name="text">
-                       <string>5894-183-200-10-144.ngrok.io</string>
+                       <string>192.168.50.244:23331</string>
                       </property>
                       <property name="maxLength">
                        <number>3000</number>

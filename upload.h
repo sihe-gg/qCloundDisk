@@ -136,6 +136,8 @@ public:
     void updateCurrentRow();                        // 下载区删除文件时更新 m_row
     void updateConfigFile();                        // 更新配置文件
 
+    void clearItemWidgets();                        //取消被选中状态(多个 QListWidget 切换时可能发生多个选中状态)
+
 signals:
     void switchUser();                              // 切换用户
 
@@ -197,7 +199,8 @@ private:
     QMessageBox *m_propertyMessage;
 
     static int m_fileNumber;
-    static int m_treeCurrentRow;                // QTreeView 行数
+
+    int m_treeCurrentRow = 0;                   // QTreeView 行数
 
     ModifyPasswd *m_modifyPwd;                  // 修改密码
 
