@@ -8,8 +8,8 @@ log::log(QWidget *parent)
     ui->setupUi(this);
 
     initWindows();
-    //设置样式表 CSS
-    initStyleSheet();
+
+    initStyleSheet();   //设置样式表 CSS
     runWindows();
 }
 

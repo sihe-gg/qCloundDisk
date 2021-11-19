@@ -15,7 +15,7 @@ class delegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:
-    delegate(QWidget *parent = nullptr);
+    delegate(int flag, QWidget *parent = nullptr);
 
     // painting
     void paint(QPainter *painter,
@@ -42,6 +42,8 @@ private:
     int m_width;            // 按钮宽度
     int m_height;           // 按钮高度
     int m_type;             // 按钮状态 1:划过 2:按下
+
+    int m_flag;             // 下载列表 or 上传列表
 
 };
 

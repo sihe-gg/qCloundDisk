@@ -4,7 +4,7 @@
 #include <QToolTip>
 #include <QIcon>
 
-delegate::delegate(QWidget *parent)
+delegate::delegate(int flag, QWidget *parent)
     : QStyledItemDelegate(parent),
       m_openButton(new QPushButton()),
       m_delButton(new QPushButton()),
@@ -12,26 +12,50 @@ delegate::delegate(QWidget *parent)
       m_width(25),
       m_height(20)
 {
-    //this->setParent(parent);
+    this->setParent(parent);
+    // 1 是 downloadList
+    m_flag = flag;
 
-    // 设置按钮正常、划过、按下
-    m_openButton->setStyleSheet("QPushButton {\
-                                    border: none; \
-                                    background-color: transparent;\
-                                    image: url(:/fileIcon/open.png);\
-                                }\
-                                QPushButton:hover {image:url(:/fileIcon/openhover.png);} \
-                                QPushButton:pressed {image: url(:/fileIcon/openpressed.png);}");
+    if(m_flag == 1)
+    {
+        // 设置按钮正常、划过、按下
+        m_openButton->setStyleSheet("QPushButton {\
+                                        border: none; \
+                                        background-color: transparent;\
+                                        image: url(:/fileIcon/open.png);\
+                                    }\
+                                    QPushButton:hover {image:url(:/fileIcon/openhover.png);} \
+                                    QPushButton:pressed {image: url(:/fileIcon/openpressed.png);}");
 
-    m_delButton->setStyleSheet("QPushButton {\
-                                    border: none; \
-                                    background-color: transparent;\
-                                    image: url(:/fileIcon/del.png);\
-                                }\
-                                QPushButton:hover {image:url(:/fileIcon/delhover.png);} \
-                                QPushButton:pressed {image: url(:/fileIcon/delpressed.png);}");
+        m_delButton->setStyleSheet("QPushButton {\
+                                        border: none; \
+                                        background-color: transparent;\
+                                        image: url(:/fileIcon/del.png);\
+                                    }\
+                                    QPushButton:hover {image:url(:/fileIcon/delhover.png);} \
+                                    QPushButton:pressed {image: url(:/fileIcon/delpressed.png);}");
 
-    m_list << QStringLiteral("打开") << QStringLiteral("删除");
+        m_list << QStringLiteral("打开") << QStringLiteral("删除");
+    }
+    else
+    {
+        m_openButton->setStyleSheet("QPushButton {\
+                                        border: none; \
+                                        background-color: transparent;\
+                                        image: url(:/fileIcon/shareInfo.png);\
+                                    }\
+                                    QPushButton:hover {image:url(:/fileIcon/shareInfo1.png);}");
+
+        m_delButton->setStyleSheet("QPushButton {\
+                                        border: none; \
+                                        background-color: transparent;\
+                                        image: url(:/fileIcon/delShare.png);\
+                                    }\
+                                    QPushButton:hover {image:url(:/fileIcon/delShare1.png);}");
+
+        m_list << QStringLiteral("详细信息") << QStringLiteral("删除记录");
+    }
+
     qApp->setStyleSheet("QPushButton m_openButton, m_delButton{}");
 }
 

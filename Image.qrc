@@ -108,5 +108,9 @@
         <file>fileIcon/open.png</file>
         <file>fileIcon/openhover.png</file>
         <file>fileIcon/openpressed.png</file>
+        <file>fileIcon/delShare.png</file>
+        <file>fileIcon/delShare1.png</file>
+        <file>fileIcon/shareInfo.png</file>
+        <file>fileIcon/shareInfo1.png</file>
     </qresource>
 </RCC>

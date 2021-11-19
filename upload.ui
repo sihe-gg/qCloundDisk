@@ -14,69 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_18">
-   <item row="0" column="0">
-    <widget class="QWidget" name="widget_13" native="true">
-     <layout class="QGridLayout" name="gridLayout_4">
-      <property name="leftMargin">
-       <number>9</number>
-      </property>
-      <property name="topMargin">
-       <number>5</number>
-      </property>
-      <property name="rightMargin">
-       <number>9</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item row="0" column="0">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="1">
-       <widget class="QToolButton" name="close_ToolButton">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>关闭</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Image.qrc">
-          <normaloff>:/images/close2.png</normaloff>:/images/close2.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>40</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="1" column="0">
     <widget class="QWidget" name="widget_7" native="true">
      <layout class="QGridLayout" name="gridLayout_8" rowstretch="0,0" columnstretch="0" rowminimumheight="0,0" columnminimumwidth="0">
@@ -95,41 +32,6 @@
          <property name="rightMargin">
           <number>36</number>
          </property>
-         <item row="0" column="5">
-          <widget class="QPushButton" name="upload_PushButton">
-           <property name="text">
-            <string>上传</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="QPushButton" name="test_PushButton">
-           <property name="text">
-            <string>测试</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="8">
-          <widget class="QPushButton" name="announce_PushButton">
-           <property name="text">
-            <string>公告</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="6">
-          <widget class="QPushButton" name="share_PushButton">
-           <property name="text">
-            <string>共享列表</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="uploadFontLabel">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="2">
           <spacer name="horizontalSpacer_3">
            <property name="orientation">
@@ -142,6 +44,13 @@
             </size>
            </property>
           </spacer>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="share_PushButton">
+           <property name="text">
+            <string>共享列表</string>
+           </property>
+          </widget>
          </item>
          <item row="0" column="0">
           <widget class="QToolButton" name="icon_ToolButton">
@@ -180,9 +89,30 @@
           </widget>
          </item>
          <item row="0" column="7">
-          <widget class="QPushButton" name="download_PushButton">
+          <widget class="QPushButton" name="announce_PushButton">
            <property name="text">
-            <string>下载</string>
+            <string>公告</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="uploadFontLabel">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QPushButton" name="test_PushButton">
+           <property name="text">
+            <string>测试</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="6">
+          <widget class="QPushButton" name="transfer_PushButton">
+           <property name="text">
+            <string>传输列表</string>
            </property>
           </widget>
          </item>
@@ -219,136 +149,128 @@
             <bool>false</bool>
            </property>
            <property name="currentIndex">
-            <number>3</number>
+            <number>1</number>
            </property>
-           <widget class="QWidget" name="upload_page">
-            <layout class="QGridLayout" name="gridLayout_6">
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <item row="0" column="0">
-              <widget class="QWidget" name="widget_5" native="true">
-               <layout class="QGridLayout" name="gridLayout_5" rowstretch="1,3,0">
+           <widget class="QWidget" name="transfer_Page">
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QWidget" name="widget_14" native="true">
+               <layout class="QGridLayout" name="gridLayout_15" rowstretch="0" columnstretch="0,0">
                 <property name="leftMargin">
-                 <number>9</number>
+                 <number>0</number>
                 </property>
                 <property name="topMargin">
                  <number>0</number>
                 </property>
                 <property name="rightMargin">
-                 <number>9</number>
+                 <number>0</number>
                 </property>
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item row="2" column="0">
-                 <widget class="QWidget" name="widget_3" native="true">
-                  <layout class="QGridLayout" name="gridLayout_3">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item row="0" column="0">
-                    <widget class="QProgressBar" name="progressBar">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QWidget" name="smallWidget" native="true">
+                  <layout class="QVBoxLayout" name="verticalLayout">
+                   <item>
+                    <widget class="QToolButton" name="uploadList_ToolButton">
+                     <property name="text">
+                      <string/>
                      </property>
-                     <property name="value">
-                      <number>24</number>
+                     <property name="iconSize">
+                      <size>
+                       <width>60</width>
+                       <height>60</height>
+                      </size>
                      </property>
-                     <property name="alignment">
-                      <set>Qt::AlignCenter</set>
+                     <property name="toolButtonStyle">
+                      <enum>Qt::ToolButtonTextBesideIcon</enum>
                      </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QWidget" name="widget_2" native="true">
-                  <layout class="QGridLayout" name="gridLayout_2">
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <item row="0" column="0">
-                    <widget class="QTextEdit" name="receiveDataLine">
-                     <property name="readOnly">
+                     <property name="autoRaise">
                       <bool>true</bool>
                      </property>
                     </widget>
                    </item>
+                   <item>
+                    <widget class="QToolButton" name="downloadList_ToolButton">
+                     <property name="text">
+                      <string/>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>60</width>
+                       <height>60</height>
+                      </size>
+                     </property>
+                     <property name="toolButtonStyle">
+                      <enum>Qt::ToolButtonTextBesideIcon</enum>
+                     </property>
+                     <property name="autoRaise">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="verticalSpacer">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>40</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
                   </layout>
                  </widget>
                 </item>
-                <item row="0" column="0">
-                 <widget class="QWidget" name="widget" native="true">
-                  <property name="enabled">
-                   <bool>true</bool>
+                <item row="0" column="1">
+                 <widget class="QStackedWidget" name="stackedWidget_2">
+                  <property name="currentIndex">
+                   <number>0</number>
                   </property>
-                  <layout class="QGridLayout" name="gridLayout_17">
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <item row="0" column="0">
-                    <widget class="QListWidget" name="uploadFile_ListWidget"/>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QWidget" name="widget_12" native="true">
-                     <layout class="QGridLayout" name="gridLayout">
-                      <item row="0" column="2">
-                       <widget class="QPushButton" name="uploadFile_PushButton">
-                        <property name="text">
-                         <string>上传</string>
-                        </property>
-                        <property name="iconSize">
-                         <size>
-                          <width>16</width>
-                          <height>16</height>
-                         </size>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QPushButton" name="getFilePath_PushButton">
-                        <property name="text">
-                         <string>打开文件</string>
-                        </property>
-                        <property name="iconSize">
-                         <size>
-                          <width>16</width>
-                          <height>16</height>
-                         </size>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="0">
-                       <spacer name="horizontalSpacer">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>40</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                     </layout>
-                    </widget>
-                   </item>
-                  </layout>
+                  <widget class="QWidget" name="uploadList_Page">
+                   <layout class="QGridLayout" name="gridLayout_21">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item row="0" column="0">
+                     <widget class="QTreeView" name="upload_TreeView"/>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="downloadList_Page">
+                   <layout class="QGridLayout" name="gridLayout_22">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item row="0" column="0">
+                     <widget class="QTreeView" name="download_TreeView"/>
+                    </item>
+                   </layout>
+                  </widget>
                  </widget>
                 </item>
                </layout>
@@ -504,16 +426,72 @@
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="download_Page">
-            <layout class="QGridLayout" name="gridLayout_20">
-             <item row="0" column="0">
-              <widget class="QTreeView" name="download_TreeView"/>
-             </item>
-            </layout>
-           </widget>
           </widget>
          </item>
         </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QWidget" name="widget_13" native="true">
+     <layout class="QGridLayout" name="gridLayout_4">
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item row="0" column="0">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="1">
+       <widget class="QToolButton" name="close_ToolButton">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>关闭</string>
+        </property>
+        <property name="icon">
+         <iconset resource="Image.qrc">
+          <normaloff>:/images/close2.png</normaloff>:/images/close2.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
      </layout>
@@ -523,16 +501,11 @@
  </widget>
  <tabstops>
   <tabstop>myFile_PushButton</tabstop>
-  <tabstop>upload_PushButton</tabstop>
   <tabstop>share_PushButton</tabstop>
   <tabstop>announce_PushButton</tabstop>
   <tabstop>myFile_ListWidget</tabstop>
   <tabstop>myShare_ListWidget</tabstop>
   <tabstop>otherShare_ListWidget</tabstop>
-  <tabstop>getFilePath_PushButton</tabstop>
-  <tabstop>uploadFile_PushButton</tabstop>
-  <tabstop>uploadFile_ListWidget</tabstop>
-  <tabstop>receiveDataLine</tabstop>
   <tabstop>icon_ToolButton</tabstop>
   <tabstop>close_ToolButton</tabstop>
   <tabstop>textEdit</tabstop>
