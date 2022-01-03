@@ -27,11 +27,17 @@ void MultiThread::startDownload(QString filePath, QString addr, QString username
     QUrl url(QString("http://%1/download").arg(addr));
     QNetworkRequest request;
     request.setUrl(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/json"));
 
     // 下载格式:username filename md5 size 最后空格
-    QByteArray downloadData = QString("%1 %2 %3 %4 ").arg(username).
-            arg(filename).arg(md5).arg(size).toUtf8();
+    QJsonObject obj;
+    obj.insert("username", username);
+    obj.insert("filename", filename);
+    obj.insert("md5", md5);
+    obj.insert("size", size);
+    QJsonDocument doc(obj);
+
+    QByteArray downloadData = doc.toJson();
 
     qDebug() << "download:" << downloadData;
 
@@ -104,21 +110,23 @@ void MultiThread::startUpload(QStringList list, QString username, QString addr)
             return;
         }
 
-        QString dispositionData = QString("form-data; name=%1; filename=%2; md5=%3; size=%4; date=%5").
+        QString dispositionData = QString("form-data; name=\"%1\"; filename=\"%2\"; md5=\"%3\" \
+                                           size=\"%4\"; date=\"%5\"").
                 arg(username).arg(info.fileName()).arg(md5).arg(info.size()).arg(uploadDate);
         QUrl url((QString("http://%1/upload").arg(addr)));
 
         // 创建发送请求对象
         QNetworkRequest request;
         request.setUrl(url);
+        request.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant(dispositionData));
         request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("multipart/form-data"));
 
         // multiPart类型http请求,传送文件
         QHttpMultiPart *multiPart = new QHttpMultiPart();
         QHttpPart part;
 
-        part.setHeader(QNetworkRequest::ContentTypeHeader, type);
-        part.setHeader(QNetworkRequest::ContentDispositionHeader, dispositionData);
+        part.setHeader(QNetworkRequest::ContentTypeHeader, QVariant(type));
+        part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant(dispositionData));
 
         // 创建文件对象
         QFile *file = new QFile(filePath);
@@ -140,11 +148,13 @@ void MultiThread::startUpload(QStringList list, QString username, QString addr)
         multiPart->setParent(reply);
 
         emit uploadFileInfo(filePath, md5, info.size());
+
         //取回服务器数据
         connect(reply, &QNetworkReply::readyRead, [=](){
             //显示记录
-            QByteArray all = reply->readAll();
-
+            QTextCodec * codec = QTextCodec::codecForName("UTF-8");
+            QString all = codec->toUnicode(reply->readAll());;
+            qDebug()<<all;
             // 判断上传是否成功
             QString buf = all;
 
@@ -177,6 +187,7 @@ void MultiThread::startUpload(QStringList list, QString username, QString addr)
             qDebug() << "上传完成，释放完成";
         });
     }
+
 
 }
 

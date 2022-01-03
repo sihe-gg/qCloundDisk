@@ -103,13 +103,12 @@ public:
     void initUploadWindow();                        // 初始化ui界面
     void initStyleSheet();                          // 初始化qss
     void initThread();                              // 初始化线程
-    void initUserFileList();                        // 初始化用户文件到列表
     void addMenuAction();                           // 初始化菜单栏
     void readTransferConfigure();                   // 读取下载区配置
 
-    void executeAction(QAction *action);            // 根据菜单执行动作
+    void showFileList();                            // 初始化用户文件到列表
 
-    void showFileList(QByteArray data);             // 展示文件到列表上
+    void executeAction(QAction *action);            // 根据菜单执行动作
 
     void addCommonFileList(QString filename,         // 添加文件到列表
                            QString md5, int num, qint64 fileSize, QString fileDate);
@@ -165,6 +164,8 @@ private:
     Ui::upload *ui;
 
     QPoint m_point;
+
+    QByteArray mainFileList;
 
     // 判断窗口移动还是缩放
     bool m_bSize = false;

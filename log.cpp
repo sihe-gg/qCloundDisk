@@ -97,7 +97,7 @@ int log::checkDatas(const int page)
             return 1;
         }
         //校验密码
-        QString PWD_REG = "^[a-zA-Z0-9_@-!#%^()=+\\*]{6,24}$";
+        QString PWD_REG = "^[a-zA-Z0-9_-@~!#$%^&+=()\\*]{6,24}$";
         regExp.setPattern(PWD_REG);
         bl = regExp.exactMatch(loginPassword);
         if(bl == false)
@@ -118,7 +118,7 @@ int log::checkDatas(const int page)
             return 1;
         }
         //校验密码
-        QString PWD_REG = "^[a-zA-Z0-9_@-!#%^()=+\\*]{6,24}$";
+        QString PWD_REG = "^[a-zA-Z0-9_-@~!#$%^&+=()\\*]{6,24}$";
         regExp.setPattern(PWD_REG);
         bl = regExp.exactMatch(password);
         if(password != confirmPwd || bl == false)
@@ -169,9 +169,9 @@ void log::sendReceiveDatas(const int page)
     if(page == LOGIN_PAGE)
     {
         url = QString("http://%1/login").arg(ui->address->text());
-        obj.insert("userName", loginUserName);
+        obj.insert("username", loginUserName);
         obj.insert("password", loginPassword);
-        obj.insert("loginDate", date);
+        obj.insert("logindate", date);
 
         //单例模式赋值
         m_loginInstance->setAddress(ui->address->text());
@@ -181,12 +181,12 @@ void log::sendReceiveDatas(const int page)
     else
     {
         url = QString("http://%1/reg").arg(ui->address->text());
-        obj.insert("userName", userName);
-        obj.insert("nickName", nickName);
+        obj.insert("username", userName);
+        obj.insert("nickname", nickName);
         obj.insert("password", password);
-        obj.insert("regMail", regMail);
-        obj.insert("regPhone", regPhone);
-        obj.insert("registerDate", date);
+        obj.insert("mail", regMail);
+        obj.insert("phone", regPhone);
+        obj.insert("registerdate", date);
     }
 
     //发送数据给服务器

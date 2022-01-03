@@ -14,6 +14,9 @@
 #include <QMessageBox>
 #include <QHttpMultiPart>
 #include <QListWidgetItem>
+#include <QTextCodec>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 class MultiThread : public QObject
 {

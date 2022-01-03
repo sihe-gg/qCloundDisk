@@ -15,7 +15,7 @@ upload::upload(QWidget *parent) :
     initUploadWindow();
     initStyleSheet();    // 设置css样式表
     initThread();
-    initUserFileList();
+    showFileList();
 
     readTransferConfigure();
 
@@ -406,7 +406,7 @@ void upload::addMenuAction()
     connect(m_flushAction, &QAction::triggered, [=](){
         m_fileNumber = 0;
         deleteList();
-        initUserFileList();
+        showFileList();
     });
     connect(m_uploadFileAction, &QAction::triggered, this, &upload::uploadFileData);
 
@@ -663,98 +663,88 @@ void upload::uploadFileData()
 }
 
 // 获取用户文件列表
-void upload::initUserFileList()
+void upload::showFileList()
 {
+    if(!mainFileList.isNull())
+    {
+        mainFileList.clear();
+    }
     // 客户端发送用户名字，查询用户上传过的文件
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     QUrl url(QString("http://%1/userfile").arg(loginInstance->getAddress()));
     QNetworkRequest request(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/json"));
 
-    QByteArray userInfo(loginInstance->getUserName().toUtf8());
+    QJsonObject obj;
+    obj.insert("username", loginInstance->getUserName());
+    QJsonDocument doc(obj);
+    QByteArray json = doc.toJson();
 
-    QNetworkReply *reply = manager->post(request, userInfo);
-
+    QNetworkReply *reply = manager->post(request, json);
     connect(reply, &QNetworkReply::readyRead, [=](){
-        char buf[1024];
-        qint64 line;
-
-        while((line = reply->readLine(buf, 1024)) != 0)
+        while(reply->bytesAvailable() > 0)
         {
-            ui->textEdit->append(buf);
-
-            // 把文件显示到列表
-            showFileList(buf);
-
-            memset(buf, 0, 1024);
+            QByteArray all = reply->readAll();
+            mainFileList += all;
         }
 
-        manager->deleteLater();
-        reply->deleteLater();
+        ui->textEdit->append(mainFileList);
+        ui->textEdit->append("----------------------------------------");
     });
-}
 
-// 解析json，用户文件展示
-void upload::showFileList(QByteArray data)
-{
-    /*     Json object          *
-     *     count:20             *
-     *                          *
-     *     filename:132.txt     *
-     *     username:qweqwe      *
-     *     md5:xxx              *
-     *     size:1000            *
-     *                          *
-     *     filename:abc.txt     *
-     *     username:qweqwe      *
-     *     md5:xxx              *
-     *     size:200             *
-     *                          *
-     *     filename:hh.jpg      *
-     *     username:qweqwe      *
-     *     md5:xxx              *
-     *     size:10              */
+    connect(reply, &QNetworkReply::finished, [=](){
+        QJsonParseError jsonError;
+        QJsonDocument doc = QJsonDocument::fromJson(mainFileList, &jsonError);
 
-    // QByteArray -> doc
-    QJsonDocument replyDoc = QJsonDocument::fromJson(data);
-    // doc -> Json
-    QJsonObject replyObj = replyDoc.object();
+        if(!doc.isNull() && (jsonError.error == QJsonParseError::NoError))
+        {
+            if(doc.isObject())
+            {
+                QJsonObject obj = doc.object();
+                if(obj.contains("files"))
+                {
+                    QJsonArray myfileArray = obj.value("files").toArray();
+                    int myfileNum = myfileArray.size();
+                    for(int i =0; i < myfileNum; i++)
+                    {
+                        QJsonValue myfileTemp = myfileArray.at(i);
+                        QJsonObject myfileTempObj = myfileTemp.toObject();
 
-    // 解析最外层json
-    // 解析发送的用户自己文件
-    if(replyObj.contains("files"))
-    {
-        QJsonValue tmp = replyObj.value("files");
-        QJsonObject obj = tmp.toObject();
+                        QJsonValue filename = myfileTempObj.value("filename");
+                        QJsonValue md5 = myfileTempObj.value("md5");
+                        QJsonValue num = myfileTempObj.value("num");
+                        QJsonValue fileSize = myfileTempObj.value("size");
+                        QJsonValue uploadDate = myfileTempObj.value("date");
 
-        // 解析内层json
-        QJsonValue filename = obj.value("filename");
-        QJsonValue md5 = obj.value("md5");
-        QJsonValue num = obj.value("num");
-        QJsonValue fileSize = obj.value("size");
-        QJsonValue uploadDate = obj.value("date");
+                        addCommonFileList(filename.toString(), md5.toString(),
+                                          num.toString().toInt(), fileSize.toString().toInt(), uploadDate.toString());
+                    }
+                }
 
-        addCommonFileList(filename.toString(), md5.toString(),
-                          num.toString().toInt(), fileSize.toString().toInt(), uploadDate.toString());
-    }
-    // 解析发送的分享文件
-    else if(replyObj.contains("share"))
-    {
-        QJsonValue tmp = replyObj.value("share");
-        QJsonObject obj = tmp.toObject();
+                if(obj.contains("share"))
+                {
+                    QJsonArray shareArray = obj.value("share").toArray();
+                    int shareNum = shareArray.size();
+                    for(int i =0; i < shareNum; i++)
+                    {
+                        QJsonValue shareTemp = shareArray.at(i);
+                        QJsonObject shareTempObj = shareTemp.toObject();
 
-        // 解析内层json
-        QJsonValue shareUsername = obj.value("username");
-        QJsonValue shareFilename = obj.value("sharefile");
-        QJsonValue sharemd5 = obj.value("sharemd5");
-        QJsonValue sharefileSize = obj.value("sharesize");
-        QJsonValue downloadCount = obj.value("downloadcount");
-        QJsonValue shareDate = obj.value("sharedate");
+                        // 解析内层json
+                        QJsonValue shareUsername = shareTempObj.value("username");
+                        QJsonValue shareFilename = shareTempObj.value("sharefile");
+                        QJsonValue sharemd5 = shareTempObj.value("sharemd5");
+                        QJsonValue sharefileSize = shareTempObj.value("sharesize");
+                        QJsonValue downloadCount = shareTempObj.value("downloadcount");
+                        QJsonValue shareDate = shareTempObj.value("sharedate");
 
-        addShareFileList(shareUsername.toString(), shareFilename.toString(), sharemd5.toString(),
-                         sharefileSize.toString().toInt(), downloadCount.toString().toInt(), shareDate.toString());
-    }
-
+                        addShareFileList(shareUsername.toString(), shareFilename.toString(), sharemd5.toString(),
+                                         sharefileSize.toString().toInt(), downloadCount.toString().toInt(), shareDate.toString());
+                    }
+                }
+            }
+        }
+    });
 }
 
 // 添加文件至主列表
@@ -887,13 +877,19 @@ void upload::delFile(UserFileInfo *delInfo)
     QNetworkRequest request;
     QUrl url(QString("http://%1/deletefile").arg(loginInstance->getAddress()));
     request.setUrl(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/json"));
 
-    // 删除发送格式:del username filename md5 date size /最后有空格
-    QByteArray deleteFile = QString("%1 %2 %3 %4 %5 %6 ").arg("del").arg(loginInstance->getUserName()).
-            arg(delInfo->m_filename).arg(delInfo->m_md5).arg(delInfo->m_date).
-            arg(delInfo->m_size).toUtf8();
+    // 删除发送格式:del username filename md5 date size
+    QJsonObject obj;
+    obj.insert("sign", "del");
+    obj.insert("username", loginInstance->getUserName());
+    obj.insert("filename", delInfo->m_filename);
+    obj.insert("md5", delInfo->m_md5);
+    obj.insert("date", delInfo->m_date);
+    obj.insert("size", QString::number(delInfo->m_size));
+    QJsonDocument doc(obj);
 
+    QByteArray deleteFile = doc.toJson();
     qDebug() << QString(deleteFile);
 
     // 发送post
@@ -952,13 +948,20 @@ void upload::shareFile(UserFileInfo *shareInfo)
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     QUrl url(QString("http://%1/deletefile").arg(loginInstance->getAddress()));
     QNetworkRequest request(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/json"));
 
-    /* 发送格式:share username filename md5 date size ,最后有一个空格*/
+    // 发送格式:share username filename md5 date size
     QString shareDate = QDateTime::currentDateTime().toString("yyyy-MM-dd&HH:mm:ss");
-    QByteArray data = QString("%1 %2 %3 %4 %5 %6 ").arg("share").arg(loginInstance->getUserName()).
-            arg(shareInfo->m_filename).arg(shareInfo->m_md5).arg(shareDate).arg(shareInfo->m_size).toUtf8();
+    QJsonObject obj;
+    obj.insert("sign", "share");
+    obj.insert("username", loginInstance->getUserName());
+    obj.insert("filename", shareInfo->m_filename);
+    obj.insert("md5", shareInfo->m_md5);
+    obj.insert("date", shareDate);
+    obj.insert("size", QString::number(shareInfo->m_size));
+    QJsonDocument doc(obj);
 
+    QByteArray data = doc.toJson();
     qDebug() << "分享发送的数据是：" << data;
 
     QNetworkReply *reply = manager->post(request, data);
@@ -1029,19 +1032,25 @@ void upload::cancelShareFile(UserFileInfo *cancelShareInfo)
     {
         m_message->setText("取消分享完成，详情信息请点击 Show Details！");
     }
-    // 创建访问管理
+
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 
     QUrl url(QString("http://%1/deletefile").arg(loginInstance->getAddress()));
     QNetworkRequest request(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/json"));
 
-    /* 发送格式:cancelshare username filename md5 date size ,最后有一个空格*/
-    QByteArray data = QString("%1 %2 %3 %4 %5 %6 ").arg("cancelshare").arg(loginInstance->getUserName()).
-            arg(cancelShareInfo->m_filename).arg(cancelShareInfo->m_md5).
-            arg(cancelShareInfo->m_date).arg(cancelShareInfo->m_size).toUtf8();
+    /* 发送格式:cancelshare username filename md5 date size*/
+    QJsonObject obj;
+    obj.insert("sign", "cancelshare");
+    obj.insert("username", loginInstance->getUserName());
+    obj.insert("filename", cancelShareInfo->m_filename);
+    obj.insert("md5", cancelShareInfo->m_md5);
+    obj.insert("date", cancelShareInfo->m_date);
+    obj.insert("size", QString::number(cancelShareInfo->m_size));
+    QJsonDocument doc(obj);
 
-    qDebug() << "分享发送的数据是：" << data;
+    QByteArray data = doc.toJson();
+    qDebug() << " cancel 发送的数据是：" << data;
 
     QNetworkReply *reply = manager->post(request, data);
 
